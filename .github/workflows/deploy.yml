@@ -45,6 +45,12 @@ jobs:
         # --no-audit/--no-fund skip slow extra registry round-trips.
         run: npm install --prefer-offline --no-audit --no-fund
 
+      - name: Verify install
+        run: |
+          cd app
+          ls -la node_modules/.bin/ | head -10
+          ls -la node_modules/typescript/package.json
+
       - name: Build static site
         run: |
           cd app

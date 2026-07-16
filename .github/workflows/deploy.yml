@@ -36,15 +36,14 @@ jobs:
         with:
           # Vite 7 requires Node >= 20.19 or >= 22.12
           node-version: 22
-          # Cache ~/.npm between runs keyed on the lockfile -> fast installs
-          cache: npm
+          
           cache-dependency-path: app/package-lock.json
 
       - name: Install dependencies
         # npm ci = clean, reproducible install straight from package-lock.json.
         # --prefer-offline uses the cache before hitting the network,
         # --no-audit/--no-fund skip slow extra registry round-trips.
-        run: npm ci --prefer-offline --no-audit --no-fund
+        run: npm install --prefer-offline --no-audit --no-fund
 
       - name: Build static site
         run: npm run build

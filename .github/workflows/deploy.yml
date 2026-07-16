@@ -1,19 +1,15 @@
 name: Build and Deploy to GitHub Pages
 
 on:
-  # Deploy on every push to main
   push:
     branches: [main]
-  # Allow manual runs from the Actions tab
   workflow_dispatch:
 
-# Permissions required for GitHub Pages deployment
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Only one Pages deployment at a time; queued runs wait instead of failing
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -22,34 +18,28 @@ jobs:
   build:
     name: Build webapp
     runs-on: ubuntu-latest
-    # Hard cap so a stuck install can never burn hours of runner time
     timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: app
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug folder structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+          echo "Finding directories up to 2 levels deep:"
+          find . -maxdepth 2 -type d
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Vite 7 requires Node >= 20.19 or >= 22.12
           node-version: 20
-          
-          cache-dependency-path: app/package-lock.json
 
       - name: Install dependencies
-        # npm ci = clean, reproducible install straight from package-lock.json.
-        # --prefer-offline uses the cache before hitting the network,
-        # --no-audit/--no-fund skip slow extra registry round-trips.
-        run: npm install --prefer-offline --no-audit --no-fund
-
-      - name: Verify install
         run: |
           cd app
-          ls -la node_modules/.bin/ | head -10
-          ls -la node_modules/typescript/package.json
+          npm install --prefer-offline --no-audit --no-fund
 
       - name: Build static site
         run: |

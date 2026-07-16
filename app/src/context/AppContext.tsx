@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import type { AppState, AppAction, Entry, OngoingEntry, FavoriteEntry, Top10Drawer, AirDay } from '@/types';
 import { saveToIndexedDB, loadFromIndexedDB } from '@/hooks/useIndexedDB';
+import type { Milestone, MilestoneType } from '@/components/MilestoneModal';
 
 const AIR_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
 
@@ -23,13 +24,48 @@ function calculateOverallRating(f: FavoriteEntry): number {
   return Math.min(Math.round((baseAvg + bonus) * 100) / 100, 10.00);
 }
 
+/* ============================================================
+   Milestone Definitions
+   ============================================================ */
+
+const MILESTONE_THRESHOLDS: Record<string, number[]> = {
+  COLLECTION_SIZE: [50, 100, 150, 200, 250, 300, 500],
+  FAVORITES_MILESTONE: [10, 25, 50, 75, 100],
+};
+
+function getMilestoneTitle(type: MilestoneType, value: number): string {
+  switch (type) {
+    case 'COLLECTION_SIZE': return `${value} Titles Collected!`;
+    case 'FAVORITES_MILESTONE': return `${value} Favorites!`;
+    case 'PERFECT_RATING': return 'First Perfect 10.0!';
+    case 'TOP10_COMPLETE': return 'Top 10 Complete!';
+    case 'ANNIVERSARY': return `${value}-Year Anniversary!`;
+    default: return 'Milestone Reached!';
+  }
+}
+
+function getMilestoneMessage(type: MilestoneType, value: number): string {
+  switch (type) {
+    case 'COLLECTION_SIZE': return `Your collection has grown to ${value} titles. Incredible dedication!`;
+    case 'FAVORITES_MILESTONE': return `You've curated ${value} favorites. Your taste is impeccable!`;
+    case 'PERFECT_RATING': return 'You gave your first perfect 10.0 rating. A true masterpiece!';
+    case 'TOP10_COMPLETE': return 'You filled a Top 10 drawer for the first time. What a year!';
+    case 'ANNIVERSARY': return `You've been watching BL for ${value} years. Here's to many more!`;
+    default: return 'Keep up the amazing work!';
+  }
+}
+
 export const initialState: AppState = {
   entries: [],
   ongoing: [],
   favorites: [],
   top10Drawers: [],
   ongoingYear: new Date().getFullYear(),
-  watchingSince: null
+  watchingSince: null,
+  importMode: false,
+  milestoneQueue: [],
+  celebratedMilestones: [],
+  showMilestoneCelebrations: true,
 };
 
 /** Migrate legacy status values and ensure createdAt exists */
@@ -66,6 +102,10 @@ function validateData(data: unknown): AppState {
   const top10Drawers = Array.isArray(d.top10Drawers) ? d.top10Drawers : [];
   const ongoingYear = typeof d.ongoingYear === 'number' ? d.ongoingYear : new Date().getFullYear();
   const watchingSince = typeof d.watchingSince === 'number' ? d.watchingSince : null;
+
+  // Migrate milestone-related fields
+  const celebratedMilestones = Array.isArray(d.celebratedMilestones) ? d.celebratedMilestones as string[] : [];
+  const showMilestoneCelebrations = typeof d.showMilestoneCelebrations === 'boolean' ? d.showMilestoneCelebrations : true;
 
   const migratedEntries = entries.map((e: Record<string, unknown>) => migrateEntry(e));
 
@@ -115,8 +155,40 @@ function validateData(data: unknown): AppState {
     favorites: validFavorites,
     top10Drawers: validTop10Drawers,
     ongoingYear,
-    watchingSince
+    watchingSince,
+    importMode: false,
+    milestoneQueue: [],
+    celebratedMilestones,
+    showMilestoneCelebrations,
   };
+}
+
+/* ============================================================
+   Milestone Checking Logic
+   ============================================================ */
+
+function checkMilestoneThreshold(
+  type: MilestoneType,
+  value: number,
+  celebrated: string[],
+): Milestone | null {
+  const thresholds = MILESTONE_THRESHOLDS[type];
+  if (!thresholds) return null;
+
+  for (const threshold of thresholds) {
+    if (value >= threshold) {
+      const milestoneId = `${type}-${threshold}`;
+      if (!celebrated.includes(milestoneId)) {
+        return {
+          type,
+          title: getMilestoneTitle(type, threshold),
+          message: getMilestoneMessage(type, threshold),
+          value: threshold,
+        };
+      }
+    }
+  }
+  return null;
 }
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -305,6 +377,30 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_WATCHING_SINCE':
       return { ...state, watchingSince: action.payload };
 
+    case 'SET_IMPORT_MODE':
+      return { ...state, importMode: action.payload };
+
+    case 'PUSH_MILESTONE':
+      return { ...state, milestoneQueue: [...state.milestoneQueue, action.payload] };
+
+    case 'POP_MILESTONE':
+      return { ...state, milestoneQueue: state.milestoneQueue.slice(1) };
+
+    case 'CLEAR_MILESTONE_QUEUE':
+      return { ...state, milestoneQueue: [] };
+
+    case 'CELEBRATE_MILESTONE': {
+      const milestoneId = action.payload;
+      if (state.celebratedMilestones.includes(milestoneId)) return state;
+      return {
+        ...state,
+        celebratedMilestones: [...state.celebratedMilestones, milestoneId],
+      };
+    }
+
+    case 'SET_SHOW_MILESTONE_CELEBRATIONS':
+      return { ...state, showMilestoneCelebrations: action.payload };
+
     default:
       return state;
   }
@@ -344,6 +440,10 @@ async function loadInitialState(): Promise<AppState> {
   return { ...initialState };
 }
 
+/* ============================================================
+   Extended App Context with Milestones
+   ============================================================ */
+
 interface AppContextValue {
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
@@ -353,6 +453,10 @@ interface AppContextValue {
   getFavoriteByEntryId: (id: string) => FavoriteEntry | undefined;
   isFavorited: (id: string) => boolean;
   isInTop10: (id: string) => { year: number; rank: number } | null;
+  checkMilestones: (type: MilestoneType, value: number) => void;
+  celebrateMilestone: (milestone: Milestone) => void;
+  dismissMilestone: () => void;
+  currentMilestone: Milestone | null;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -360,6 +464,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const [currentMilestone, setCurrentMilestone] = useState<Milestone | null>(null);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -383,6 +488,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, [state, isLoaded]);
 
+  // Process milestone queue
+  useEffect(() => {
+    if (state.milestoneQueue.length > 0 && !currentMilestone) {
+      const next = state.milestoneQueue[0];
+      setCurrentMilestone(next);
+      dispatch({ type: 'POP_MILESTONE' });
+    }
+  }, [state.milestoneQueue, currentMilestone]);
+
   const getEntryById = useCallback((id: string) => state.entries.find(e => e.id === id), [state.entries]);
   const getOngoingByEntryId = useCallback((id: string) => state.ongoing.find(o => o.entryId === id), [state.ongoing]);
   const getFavoriteByEntryId = useCallback((id: string) => state.favorites.find(f => f.entryId === id), [state.favorites]);
@@ -395,11 +509,83 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, [state.top10Drawers]);
 
+  // Check if a milestone threshold was crossed
+  const checkMilestones = useCallback((type: MilestoneType, value: number) => {
+    const celebrated = state.celebratedMilestones;
+    let milestone: Milestone | null = null;
+
+    if (type === 'PERFECT_RATING' && value >= 10.0) {
+      const id = 'PERFECT_RATING-first';
+      if (!celebrated.includes(id)) {
+        milestone = {
+          type: 'PERFECT_RATING',
+          title: getMilestoneTitle('PERFECT_RATING', 10),
+          message: getMilestoneMessage('PERFECT_RATING', 10),
+          value: 10,
+        };
+      }
+    } else if (type === 'TOP10_COMPLETE') {
+      const id = 'TOP10_COMPLETE-first';
+      if (!celebrated.includes(id)) {
+        const fullDrawer = state.top10Drawers.find(d => d.entries.length >= 10);
+        if (fullDrawer) {
+          milestone = {
+            type: 'TOP10_COMPLETE',
+            title: getMilestoneTitle('TOP10_COMPLETE', fullDrawer.year),
+            message: getMilestoneMessage('TOP10_COMPLETE', fullDrawer.year),
+            value: fullDrawer.year,
+          };
+        }
+      }
+    } else if (type === 'ANNIVERSARY') {
+      if (state.watchingSince) {
+        const currentYear = new Date().getFullYear();
+        const years = currentYear - state.watchingSince;
+        if (years > 0) {
+          const id = `ANNIVERSARY-${years}`;
+          if (!celebrated.includes(id)) {
+            milestone = {
+              type: 'ANNIVERSARY',
+              title: getMilestoneTitle('ANNIVERSARY', years),
+              message: getMilestoneMessage('ANNIVERSARY', years),
+              value: years,
+            };
+          }
+        }
+      }
+    } else {
+      milestone = checkMilestoneThreshold(type, value, celebrated);
+    }
+
+    if (milestone) {
+      dispatch({ type: 'CELEBRATE_MILESTONE', payload: `${milestone.type}-${milestone.value}` });
+      // Only queue for display if not in import mode and celebrations are enabled
+      if (!state.importMode && state.showMilestoneCelebrations) {
+        dispatch({ type: 'PUSH_MILESTONE', payload: milestone });
+      }
+    }
+  }, [state.celebratedMilestones, state.importMode, state.showMilestoneCelebrations, state.watchingSince, state.top10Drawers]);
+
+  const celebrateMilestone = useCallback((milestone: Milestone) => {
+    dispatch({ type: 'CELEBRATE_MILESTONE', payload: `${milestone.type}-${milestone.value}` });
+    if (!state.importMode && state.showMilestoneCelebrations) {
+      dispatch({ type: 'PUSH_MILESTONE', payload: milestone });
+    }
+  }, [state.importMode, state.showMilestoneCelebrations]);
+
+  const dismissMilestone = useCallback(() => {
+    setCurrentMilestone(null);
+  }, []);
+
   return (
     <AppContext.Provider value={{
       state, dispatch, isLoaded,
       getEntryById, getOngoingByEntryId, getFavoriteByEntryId,
-      isFavorited, isInTop10
+      isFavorited, isInTop10,
+      checkMilestones,
+      celebrateMilestone,
+      dismissMilestone,
+      currentMilestone,
     }}>
       {children}
     </AppContext.Provider>

@@ -35,7 +35,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           # Vite 7 requires Node >= 20.19 or >= 22.12
-          node-version: 22
+          node-version: 20
           
           cache-dependency-path: app/package-lock.json
 

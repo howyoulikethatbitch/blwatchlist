@@ -486,7 +486,7 @@ export default function FavoriteEvaluation({
   entryId,
   initialMode = 'view',
 }: FavoriteEvaluationProps) {
-  const { dispatch, getEntryById, getFavoriteByEntryId, isFavorited } = useApp();
+  const { dispatch, getEntryById, getFavoriteByEntryId, isFavorited, checkMilestones, state } = useApp();
   const [mode, setMode] = useState<'view' | 'edit'>(initialMode);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [isFirstOpen, setIsFirstOpen] = useState(true);
@@ -595,8 +595,18 @@ export default function FavoriteEvaluation({
       dispatch({ type: 'UPDATE_FAVORITE', payload: favoriteData });
     }
 
+    // Trigger milestone checks
+    // Check for perfect rating (10.0)
+    if (overallRating >= 10.0) {
+      checkMilestones('PERFECT_RATING', overallRating);
+    }
+
+    // Check for favorites milestone
+    const favoritesCount = state.favorites.length + (existingFavorite ? 0 : 1);
+    checkMilestones('FAVORITES_MILESTONE', favoritesCount);
+
     setMode('view');
-  }, [entryId, storyline, acting, music, chemistry, cinematography, originality, flowAndPacing, characterDepth, relationshipDynamics, emotionalImpact, ending, rewatchValue, overallRating, favorited, existingFavorite, dispatch]);
+  }, [entryId, storyline, acting, music, chemistry, cinematography, originality, flowAndPacing, characterDepth, relationshipDynamics, emotionalImpact, ending, rewatchValue, overallRating, favorited, existingFavorite, dispatch, checkMilestones, state.favorites.length]);
 
   const handleRemove = useCallback(() => {
     if (!entryId) return;

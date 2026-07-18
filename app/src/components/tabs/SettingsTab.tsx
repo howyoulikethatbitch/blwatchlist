@@ -11,8 +11,6 @@ import {
   Database,
   Settings,
   Trash2,
-  Bell,
-  BellOff,
   Loader2,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
@@ -51,6 +49,9 @@ export default function SettingsTab() {
 
   // Clear data state
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  // Post-import profile prompt
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
 
   const handleSave = useCallback(async () => {
     setSaveResult(null);
@@ -214,7 +215,6 @@ export default function SettingsTab() {
           importMode: false,
           milestoneQueue: [],
           celebratedMilestones: Array.isArray(data.celebratedMilestones) ? data.celebratedMilestones as string[] : [],
-          showMilestoneCelebrations: true,
         };
       } else {
         // Legacy format - entries only
@@ -228,7 +228,6 @@ export default function SettingsTab() {
           importMode: false,
           milestoneQueue: [],
           celebratedMilestones: [],
-          showMilestoneCelebrations: true,
         };
       }
 
@@ -278,15 +277,11 @@ export default function SettingsTab() {
         importMode: false,
         milestoneQueue: [],
         celebratedMilestones: [],
-        showMilestoneCelebrations: true,
       }
     });
     setShowClearConfirm(false);
   }, [dispatch]);
 
-  const toggleMilestoneCelebrations = useCallback(() => {
-    dispatch({ type: 'SET_SHOW_MILESTONE_CELEBRATIONS', payload: !state.showMilestoneCelebrations });
-  }, [dispatch, state.showMilestoneCelebrations]);
 
   return (
     <div className="space-y-6 w-full relative">
@@ -396,43 +391,6 @@ export default function SettingsTab() {
             </div>
           </button>
         </div>
-      </div>
-
-      {/* Milestone Settings */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Milestones</h2>
-        <button
-          onClick={toggleMilestoneCelebrations}
-          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-[#141414] border border-white/[0.06] text-white hover:bg-white/[0.04] transition-colors tap-active text-left"
-        >
-          <div className="w-10 h-10 rounded-lg bg-[#E50914]/10 flex items-center justify-center flex-shrink-0">
-            {state.showMilestoneCelebrations ? (
-              <Bell className="w-5 h-5 text-[#E50914]" />
-            ) : (
-              <BellOff className="w-5 h-5 text-[#666]" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold">
-              {state.showMilestoneCelebrations ? 'Milestone Celebrations On' : 'Milestone Celebrations Off'}
-            </p>
-            <p className="text-xs text-[#666]">
-              {state.showMilestoneCelebrations
-                ? 'Show celebration modals when milestones are reached'
-                : 'Silently unlock achievements without celebrations'}
-            </p>
-          </div>
-          <div
-            className={`w-10 h-6 rounded-full flex-shrink-0 transition-colors relative ${
-              state.showMilestoneCelebrations ? 'bg-[#E50914]' : 'bg-white/10'
-            }`}
-          >
-            <div
-              className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
-              style={{ transform: state.showMilestoneCelebrations ? 'translateX(16px)' : 'translateX(0)' }}
-            />
-          </div>
-        </button>
       </div>
 
       {/* About Section */}
@@ -657,7 +615,7 @@ export default function SettingsTab() {
         )}
       </AnimatePresence>
 
-      {/* Import Success Modal */}
+      {/* Import Success Modal (1st) */}
       <AnimatePresence>
         {showImportSuccess && (
           <motion.div
@@ -665,7 +623,6 @@ export default function SettingsTab() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4"
-            onClick={() => setShowImportSuccess(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -690,11 +647,60 @@ export default function SettingsTab() {
                 </div>
               )}
               <button
-                onClick={() => setShowImportSuccess(false)}
+                onClick={() => { setShowImportSuccess(false); setShowProfilePrompt(true); }}
                 className="mt-4 w-full py-2.5 rounded-xl bg-[#E50914] hover:bg-[#E50914]/90 text-white text-sm font-semibold transition-colors"
               >
                 Done
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Profile Prompt Modal (2nd — after import) */}
+      <AnimatePresence>
+        {showProfilePrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-6 max-w-sm w-full text-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="text-4xl mb-3">✨</div>
+              <h3 className="text-white font-bold text-lg mb-2">Profile Updated!</h3>
+              <p className="text-sm text-[#B3B3B3] leading-relaxed">
+                Your <span className="text-white font-semibold">Collection Personality</span> and{' '}
+                <span className="text-white font-semibold">Achievement Showcase</span> have been updated
+                based on your imported data.
+              </p>
+              <p className="text-sm text-[#B3B3B3] mt-3 leading-relaxed">
+                Check your <span className="text-[#E50914] font-semibold">BL Watcher Profile</span> to
+                see your updated title, unlocked achievements, and personalized collection insights.
+              </p>
+              <div className="mt-5 flex gap-2">
+                <button
+                  onClick={() => setShowProfilePrompt(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-[#B3B3B3] text-sm font-medium transition-colors"
+                >
+                  Later
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProfilePrompt(false);
+                    window.dispatchEvent(new CustomEvent('bl-open-profile'));
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-[#E50914] hover:bg-[#E50914]/90 text-white text-sm font-semibold transition-colors"
+                >
+                  View Profile
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

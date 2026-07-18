@@ -211,6 +211,7 @@ async function drawTop10Card(ctx: CanvasRenderingContext2D, options: ShareCardOp
 
   const images = await Promise.all(posters.map((e) => loadImage(e.poster || "")));
 
+  // Draw posters with rank badges (no title text below each poster)
   for (let i = 0; i < posters.length; i++) {
     const row = Math.floor(i / cols);
     const col = i % cols;
@@ -233,6 +234,47 @@ async function drawTop10Card(ctx: CanvasRenderingContext2D, options: ShareCardOp
     ctx.fillText(String(i + 1), x + 22, y + 22);
 
     await drawPoster(ctx, images[i], x, y, posterW, posterH, posters[i].title);
+  }
+
+  // --- Ranked title list below all posters ---
+  // Bottom of row 2: startY + 2*(posterH+gapY) = 230 + 2*295 = 820
+  const sepY = startY + 2 * (posterH + gapY) + 18;
+
+  // Separator line
+  ctx.strokeStyle = "rgba(255,255,255,0.12)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(60, sepY);
+  ctx.lineTo(CARD_WIDTH - 60, sepY);
+  ctx.stroke();
+
+  // Two-column layout: ranks 1-5 on left, 6-10 on right
+  const padX = 70;
+  const colGap = 50;
+  const colWidth = (CARD_WIDTH - padX * 2 - colGap) / 2;
+  const rowH = 46;
+  const listStartY = sepY + 36;
+  const rankColors = ["#E50914", "#FF2D7B", "#FF6B35"];
+
+  for (let i = 0; i < posters.length; i++) {
+    const colIdx = i < 5 ? 0 : 1;
+    const rowIdx = i < 5 ? i : i - 5;
+    const x = padX + colIdx * (colWidth + colGap);
+    const y = listStartY + rowIdx * rowH + rowH / 2;
+
+    // Rank number
+    ctx.fillStyle = rankColors[i] || "#888888";
+    ctx.font = "bold 26px sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${i + 1}.`, x, y);
+
+    // Title
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "22px sans-serif";
+    const titleX = x + 54;
+    const maxW = colWidth - 54;
+    ctx.fillText(truncateText(ctx, posters[i].title, maxW, 22), titleX, y);
   }
 }
 

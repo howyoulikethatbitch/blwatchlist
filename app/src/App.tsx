@@ -33,6 +33,16 @@ function AppContent() {
     return () => window.removeEventListener('bl-import', handler);
   }, []);
 
+  // Handle profile open events from SettingsTab post-import prompt
+  useEffect(() => {
+    const handler = () => {
+      setActiveTab('statistics');
+      setProfileOpen(true);
+    };
+    window.addEventListener('bl-open-profile', handler);
+    return () => window.removeEventListener('bl-open-profile', handler);
+  }, []);
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">

@@ -159,8 +159,7 @@ export type AppAction =
   | { type: 'PUSH_MILESTONE'; payload: Milestone }
   | { type: 'POP_MILESTONE' }
   | { type: 'CLEAR_MILESTONE_QUEUE' }
-  | { type: 'CELEBRATE_MILESTONE'; payload: string }
-  | { type: 'SET_SHOW_MILESTONE_CELEBRATIONS'; payload: boolean };
+  | { type: 'CELEBRATE_MILESTONE'; payload: string };
 
 export interface StorageResult {
   success: boolean;

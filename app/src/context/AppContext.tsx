@@ -65,7 +65,6 @@ export const initialState: AppState = {
   importMode: false,
   milestoneQueue: [],
   celebratedMilestones: [],
-  showMilestoneCelebrations: true,
 };
 
 /** Migrate legacy status values and ensure createdAt exists */
@@ -105,7 +104,6 @@ function validateData(data: unknown): AppState {
 
   // Migrate milestone-related fields
   const celebratedMilestones = Array.isArray(d.celebratedMilestones) ? d.celebratedMilestones as string[] : [];
-  const showMilestoneCelebrations = typeof d.showMilestoneCelebrations === 'boolean' ? d.showMilestoneCelebrations : true;
 
   const migratedEntries = entries.map((e: Record<string, unknown>) => migrateEntry(e));
 
@@ -159,7 +157,6 @@ function validateData(data: unknown): AppState {
     importMode: false,
     milestoneQueue: [],
     celebratedMilestones,
-    showMilestoneCelebrations,
   };
 }
 
@@ -398,8 +395,6 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       };
     }
 
-    case 'SET_SHOW_MILESTONE_CELEBRATIONS':
-      return { ...state, showMilestoneCelebrations: action.payload };
 
     default:
       return state;
@@ -559,18 +554,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (milestone) {
       dispatch({ type: 'CELEBRATE_MILESTONE', payload: `${milestone.type}-${milestone.value}` });
       // Only queue for display if not in import mode and celebrations are enabled
-      if (!state.importMode && state.showMilestoneCelebrations) {
+      if (!state.importMode) {
         dispatch({ type: 'PUSH_MILESTONE', payload: milestone });
       }
     }
-  }, [state.celebratedMilestones, state.importMode, state.showMilestoneCelebrations, state.watchingSince, state.top10Drawers]);
+  }, [state.celebratedMilestones, state.importMode, state.watchingSince, state.top10Drawers]);
 
   const celebrateMilestone = useCallback((milestone: Milestone) => {
     dispatch({ type: 'CELEBRATE_MILESTONE', payload: `${milestone.type}-${milestone.value}` });
-    if (!state.importMode && state.showMilestoneCelebrations) {
+    if (!state.importMode) {
       dispatch({ type: 'PUSH_MILESTONE', payload: milestone });
     }
-  }, [state.importMode, state.showMilestoneCelebrations]);
+  }, [state.importMode]);
 
   const dismissMilestone = useCallback(() => {
     setCurrentMilestone(null);

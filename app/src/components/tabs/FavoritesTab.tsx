@@ -5,8 +5,6 @@ import { useApp } from "@/context/AppContext";
 import Poster from "../Poster";
 import RatingCircle from "../RatingCircle";
 import FavoriteEvaluation from "../FavoriteEvaluation";
-import ShareButton from "../ShareCard";
-
 type SortOption = "ratingDesc" | "ratingAsc" | "yearDesc" | "yearAsc" | "titleAZ" | "titleZA";
 type FilterOption = "all" | "movies" | "series";
 
@@ -65,19 +63,6 @@ export default function FavoritesTab() {
     return result;
   }, [state.favorites, sortBy, filterBy, getEntryById]);
 
-  // Share card entries
-  const shareCardEntries = useMemo(() => {
-    return processedFavorites.slice(0, 6).map((fav) => {
-      const entry = getEntryById(fav.entryId);
-      return {
-        title: entry?.title || "Unknown",
-        poster: entry?.poster || null,
-        year: entry?.year,
-        country: entry?.country,
-      };
-    });
-  }, [processedFavorites, getEntryById]);
-
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: "ratingDesc", label: "Highest Rating" },
     { value: "ratingAsc", label: "Lowest Rating" },
@@ -131,13 +116,6 @@ export default function FavoritesTab() {
             Filter
           </button>
 
-          {/* Share Button */}
-          <ShareButton
-            type="favorites"
-            title="My Top Favorites"
-            subtitle={`${state.favorites.length} favorites`}
-            entries={shareCardEntries}
-          />
         </div>
       </div>
 

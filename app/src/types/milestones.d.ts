@@ -8,6 +8,5 @@ declare module '@/types' {
     importMode: boolean;
     milestoneQueue: Milestone[];
     celebratedMilestones: string[];
-    showMilestoneCelebrations: boolean;
   }
 }

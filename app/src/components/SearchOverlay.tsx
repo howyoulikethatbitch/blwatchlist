@@ -147,7 +147,7 @@ const SearchResultCard = memo(function SearchResultCard({
    Main SearchOverlay
    ============================================================ */
 export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
-  const { state, dispatch, isFavorited, isInTop10, checkMilestones } = useApp();
+  const { state, dispatch, isFavorited, isInTop10 } = useApp();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 200);
   const inputRef = useRef<HTMLInputElement>(null);

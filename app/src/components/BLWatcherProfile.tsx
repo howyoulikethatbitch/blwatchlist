@@ -76,8 +76,8 @@ const ACHIEVEMENTS: Achievement[] = [
 
   /* ---- 📅 Ongoing (3) ---- */
   { id: 'airing-companion', emoji: '📅', name: 'Airing Companion', description: 'Track 1 ongoing title', category: 'Ongoing', condition: (s) => s.ongoing >= 1 },
-  { id: 'weekly-watcher', emoji: '📡', name: 'Weekly Watcher', description: 'Track 10 ongoing titles', category: 'Ongoing', condition: (s) => s.ongoing >= 10 },
-  { id: 'always-updated', emoji: '⏳', name: 'Always Updated', description: 'Track 50 ongoing titles', category: 'Ongoing', condition: (s) => s.ongoing >= 50 },
+  { id: 'weekly-watcher', emoji: '📡', name: 'Weekly Watcher', description: 'Track 5 ongoing titles', category: 'Ongoing', condition: (s) => s.ongoing >= 5 },
+  { id: 'always-updated', emoji: '⏳', name: 'Always Updated', description: 'Track 10 ongoing titles', category: 'Ongoing', condition: (s) => s.ongoing >= 10 },
 
   /* ---- 🥇 Top 10 (4) ---- */
   { id: 'first-ranking', emoji: '🥇', name: 'First Ranking', description: 'Create your first Top 10 drawer', category: 'Top 10', condition: (s) => s.top10 >= 1 },

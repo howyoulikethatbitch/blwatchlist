@@ -44,13 +44,17 @@ jobs:
         working-directory: app
         run: pnpm install --no-frozen-lockfile
 
-      - name: Initialize Capacitor & add Android platform
+      - name: Build web app (production)
         working-directory: app
         run: |
-          npx cap init "BL Watchlist" "com.howyoulikethatbitch.blwatchlist" --web-dir=www
-          npx cap add android
+          pnpm exec tsc -b
+          pnpm exec vite build
 
-      - name: Sync Capacitor
+      - name: Add Android platform
+        working-directory: app
+        run: npx cap add android
+
+      - name: Sync web assets into Android
         working-directory: app
         run: npx cap sync android
 

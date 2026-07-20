@@ -36,30 +36,33 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('app/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install
+        working-directory: app
+        run: pnpm install --no-frozen-lockfile
 
       - name: Initialize Capacitor & add Android platform
+        working-directory: app
         run: |
           npx cap init "BL Watchlist" "com.howyoulikethatbitch.blwatchlist" --web-dir=www
           npx cap add android
 
       - name: Sync Capacitor
+        working-directory: app
         run: npx cap sync android
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Build debug APK
-        working-directory: android
+        working-directory: app/android
         run: ./gradlew assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk

@@ -60,7 +60,10 @@ export default defineConfig(async ({ mode }) => {
         workbox: {
           // Cache all build assets (JS, CSS, HTML)
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff,ttf}'],
-          // Runtime caching for any requests the app makes
+          // Serve index.html for all navigation requests when offline
+          // (fixes "offline" screen when launching the installed PWA)
+          navigateFallback: '/index.html',
+          // Runtime caching for Google Fonts
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -77,9 +80,13 @@ export default defineConfig(async ({ mode }) => {
               },
             },
           ],
-          // Ensure the service worker takes control immediately on first install
+          // Do NOT use skipWaiting/clientsClaim with registerType:'prompt'.
+          // clientsClaim: true causes the new SW to seize control of the
+          // already-open page mid-session, making lazy-loaded chunks (with
+          // old content-hashed filenames) 404 from the new cache → frozen UI.
+          // The update prompt handles the reload explicitly instead.
           skipWaiting: false,
-          clientsClaim: true,
+          clientsClaim: false,
         },
         devOptions: {
           enabled: false,

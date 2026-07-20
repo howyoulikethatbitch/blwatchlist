@@ -4,6 +4,7 @@ import { AppProvider, useApp } from '@/context/AppContext';
 import Header from '@/components/Header';
 import SidebarNav, { type TabId } from '@/components/SidebarNav';
 import MilestoneModal from '@/components/MilestoneModal';
+import PWAUpdatePrompt from '@/components/PWAUpdatePrompt';
 // Overview is the landing tab — keep it eager so first paint is instant
 import OverviewTab from '@/components/tabs/OverviewTab';
 import './App.css';
@@ -140,6 +141,7 @@ function App() {
   return (
     <AppProvider>
       <AppContent />
+      <PWAUpdatePrompt />
     </AppProvider>
   );
 }

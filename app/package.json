@@ -10,6 +10,11 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "pnpm": {
+    "overrides": {
+      "tar": "^7.0.0"
+    }
+  },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
     "@capacitor/cli": "^8.4.2",

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useCallback, useEffect, u
 import type { AppState, AppAction, Entry, OngoingEntry, FavoriteEntry, Top10Drawer, AirDay } from '@/types';
 import { saveToIndexedDB, loadFromIndexedDB } from '@/hooks/useIndexedDB';
 import type { Milestone, MilestoneType } from '@/components/MilestoneModal';
+import { trackWrappedEvent } from '@/lib/wrappedTracker';
 
 const AIR_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
 
@@ -462,6 +463,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentMilestone, setCurrentMilestone] = useState<Milestone | null>(null);
   const initialized = useRef(false);
 
+  // Wrap dispatch to track wrapped activity as a fire-and-forget side effect
+  const dispatchWithTracking = useCallback((action: AppAction) => {
+    trackWrappedEvent(action, state as AppState).catch(() => {});
+    dispatch(action);
+  }, [state]);
+
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
@@ -573,7 +580,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      state, dispatch, isLoaded,
+      state, dispatch: dispatchWithTracking, isLoaded,
       getEntryById, getOngoingByEntryId, getFavoriteByEntryId,
       isFavorited, isInTop10,
       checkMilestones,

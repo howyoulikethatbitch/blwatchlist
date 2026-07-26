@@ -1,10 +1,13 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppProvider, useApp } from '@/context/AppContext';
+import { WrappedProvider } from '@/context/WrappedContext';
 import Header from '@/components/Header';
 import SidebarNav, { type TabId } from '@/components/SidebarNav';
 import MilestoneModal from '@/components/MilestoneModal';
 import PWAUpdatePrompt from '@/components/PWAUpdatePrompt';
+import { WrappedPresentationContainer } from '@/components/wrapped/WrappedPresentation';
+import WrappedHistory from '@/components/wrapped/WrappedHistory';
 // Overview is the landing tab — keep it eager so first paint is instant
 import OverviewTab from '@/components/tabs/OverviewTab';
 import './App.css';
@@ -133,6 +136,10 @@ function AppContent() {
         milestone={currentMilestone}
         onClose={dismissMilestone}
       />
+
+      {/* Monthly BL Wrapped — auto-present + history sheet */}
+      <WrappedPresentationContainer />
+      <WrappedHistory />
     </div>
   );
 }
@@ -140,8 +147,10 @@ function AppContent() {
 function App() {
   return (
     <AppProvider>
-      <AppContent />
-      <PWAUpdatePrompt />
+      <WrappedProvider>
+        <AppContent />
+        <PWAUpdatePrompt />
+      </WrappedProvider>
     </AppProvider>
   );
 }

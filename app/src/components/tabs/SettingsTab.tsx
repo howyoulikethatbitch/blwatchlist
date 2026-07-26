@@ -11,8 +11,10 @@ import {
   Database,
   Settings,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import { useWrapped } from '@/context/WrappedContext';
 import { saveToIndexedDB, clearIndexedDB } from '@/hooks/useIndexedDB';
 import type { StorageResult, AppState, FullBackup, BackupMetadata } from '@/types';
 import {
@@ -28,7 +30,9 @@ const APP_VERSION = '1.3.8';
 
 export default function SettingsTab() {
   const { state, dispatch } = useApp();
+  const { openHistory, snapshots } = useWrapped();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const unviewedCount = snapshots.filter(s => !s.isViewed).length;
 
   // Save Now state
   const [showSaveStatus, setShowSaveStatus] = useState(false);
@@ -373,6 +377,28 @@ export default function SettingsTab() {
             </div>
           </button>
         </div>
+      </div>
+
+      {/* Monthly Wrapped Section */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Monthly Wrapped</h2>
+        <button
+          onClick={openHistory}
+          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-[#141414] border border-white/[0.06] text-white hover:bg-white/[0.04] transition-colors tap-active text-left"
+        >
+          <div className="w-10 h-10 rounded-lg bg-[#E50914]/10 flex items-center justify-center flex-shrink-0 relative">
+            <Sparkles className="w-5 h-5 text-[#E50914]" />
+            {unviewedCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E50914] text-white text-[10px] font-bold flex items-center justify-center">
+                {unviewedCount}
+              </span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Wrapped History</p>
+            <p className="text-xs text-[#666]">Review your monthly BL journey summaries</p>
+          </div>
+        </button>
       </div>
 
       {/* About Section */}

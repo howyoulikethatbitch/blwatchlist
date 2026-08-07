@@ -363,7 +363,7 @@ function EndingSlide({ slide, accent }: { slide: WrappedSlide; accent: string })
   );
 }
 
-function QuietSlide({ slide, accent }: { slide: WrappedSlide; accent: string }) {
+function QuietSlide({ slide }: { slide: WrappedSlide }) {
   const p = slide.payload as { monthName: string; year: number };
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-6">
@@ -426,7 +426,7 @@ function renderSlide(slide: WrappedSlide, accent: string) {
     case 'achievement':    return <AchievementSlide slide={slide} accent={accent} />;
     case 'rank':           return <RankSlide      slide={slide} accent={accent} />;
     case 'ending':         return <EndingSlide    slide={slide} accent={accent} />;
-    case 'quiet':          return <QuietSlide     slide={slide} accent={accent} />;
+    case 'quiet':          return <QuietSlide     slide={slide} />;
     default:               return <StatSlide      slide={slide} accent={accent} />;
   }
 }

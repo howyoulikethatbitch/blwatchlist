@@ -3,7 +3,6 @@
 import type {
   MonthlyActivityData,
   MonthlyWrappedSnapshot,
-  MonthKey,
   WrappedSlide,
   SlideType,
 } from '@/types/wrapped';

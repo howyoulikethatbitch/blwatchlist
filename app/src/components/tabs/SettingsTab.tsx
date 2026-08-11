@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { useWrapped } from '@/context/WrappedContext';
+import { useAnnualWrapped } from '@/context/AnnualWrappedContext';
 import { saveToIndexedDB, clearIndexedDB } from '@/hooks/useIndexedDB';
 import type { StorageResult, AppState, FullBackup, BackupMetadata } from '@/types';
 import {
@@ -31,8 +32,10 @@ const APP_VERSION = '1.3.8';
 export default function SettingsTab() {
   const { state, dispatch } = useApp();
   const { openHistory, snapshots } = useWrapped();
+  const { openHistory: openAnnualHistory, snapshots: annualSnapshots } = useAnnualWrapped();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unviewedCount = snapshots.filter(s => !s.isViewed).length;
+  const unviewedAnnualCount = annualSnapshots.filter(s => !s.isViewed).length;
 
   // Save Now state
   const [showSaveStatus, setShowSaveStatus] = useState(false);
@@ -397,6 +400,28 @@ export default function SettingsTab() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold">Wrapped History</p>
             <p className="text-xs text-[#666]">Review your monthly BL journey summaries</p>
+          </div>
+        </button>
+      </div>
+
+      {/* Annual Wrapped Section */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-[#888]">Annual Wrapped</h2>
+        <button
+          onClick={openAnnualHistory}
+          className="w-full flex items-center gap-3 rounded-xl border border-[#E50914]/20 bg-[#141414] px-4 py-3.5 text-left text-white transition-colors hover:bg-[#E50914]/5 tap-active"
+        >
+          <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#E50914]/10">
+            <Sparkles className="h-5 w-5 text-[#E50914]" />
+            {unviewedAnnualCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#E50914] text-[10px] font-bold text-white">
+                {unviewedAnnualCount}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">Annual BL Wrapped</p>
+            <p className="text-xs text-[#666]">Relive the grand finale of each BL year</p>
           </div>
         </button>
       </div>

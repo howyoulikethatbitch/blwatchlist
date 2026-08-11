@@ -164,3 +164,132 @@ export interface WrappedContextValue {
   closeHistory: () => void;
   replaySnapshot: (month: MonthKey) => void;
 }
+
+// ── Annual BL Wrapped ─────────────────────────────────────────────────────────
+
+export interface AnnualTrackedEntry extends TrackedEntry {
+  genres?: string[];
+}
+
+export interface AnnualRankingEntry extends AnnualTrackedEntry {
+  rank: number;
+  drawerYear: number;
+}
+
+/**
+ * Mutable yearly activity. This is deliberately separate from monthly activity:
+ * a yearly snapshot must be buildable even when some monthly snapshots are
+ * missing or were never viewed.
+ */
+export interface AnnualActivityData {
+  year: number;
+  createdAt: number;
+  updatedAt: number;
+  completedTitles: AnnualTrackedEntry[];
+  droppedTitles: AnnualTrackedEntry[];
+  plannedTitles: AnnualTrackedEntry[];
+  ongoingStarted: AnnualTrackedEntry[];
+  ongoingContinued: AnnualTrackedEntry[];
+  statusCompletions: AnnualTrackedEntry[];
+  totalEntriesAdded: number;
+  favoritesAdded: AnnualTrackedEntry[];
+  favoritesRemoved: number;
+  ratingsGiven: number;
+  ratingsEdited: number;
+  ratingValues: number[];
+  ratingByEntry: Record<string, AnnualTrackedEntry & { rating: number }>;
+  top10Updates: number;
+  top10DrawersCreated: number;
+  top10Rankings: Record<string, AnnualRankingEntry[]>;
+  milestonesUnlocked: Array<{ id: string; title: string; type: string; value: number }>;
+  countriesWatched: string[];
+  genresWatched: string[];
+  moviesWatched: number;
+  seriesWatched: number;
+  netCollectionGrowth: number;
+  collectionSizeAtLastUpdate: number | null;
+  rankAtLastUpdate: string | null;
+  rankEmojiAtLastUpdate: string | null;
+}
+
+export function emptyAnnualActivityData(year: number): AnnualActivityData {
+  const now = Date.now();
+  return {
+    year,
+    createdAt: now,
+    updatedAt: now,
+    completedTitles: [],
+    droppedTitles: [],
+    plannedTitles: [],
+    ongoingStarted: [],
+    ongoingContinued: [],
+    statusCompletions: [],
+    totalEntriesAdded: 0,
+    favoritesAdded: [],
+    favoritesRemoved: 0,
+    ratingsGiven: 0,
+    ratingsEdited: 0,
+    ratingValues: [],
+    ratingByEntry: {},
+    top10Updates: 0,
+    top10DrawersCreated: 0,
+    top10Rankings: {},
+    milestonesUnlocked: [],
+    countriesWatched: [],
+    genresWatched: [],
+    moviesWatched: 0,
+    seriesWatched: 0,
+    netCollectionGrowth: 0,
+    collectionSizeAtLastUpdate: null,
+    rankAtLastUpdate: null,
+    rankEmojiAtLastUpdate: null,
+  };
+}
+
+export interface AnnualWrappedSnapshot {
+  year: number;
+  generatedAt: number;
+  isViewed: boolean;
+  data: AnnualActivityData;
+  collectionSizeAtEnd: number | null;
+  rankAtEnd: string | null;
+  rankEmojiAtEnd: string | null;
+  version: number;
+}
+
+export type AnnualSlideType =
+  | 'intro' | 'activity' | 'completed' | 'growth' | 'favorites' | 'ratings'
+  | 'highest-rated' | 'countries' | 'genres' | 'ongoing' | 'top10'
+  | 'achievement' | 'rank' | 'quiet' | 'ending';
+
+export interface AnnualWrappedSlide {
+  id: string;
+  type: AnnualSlideType;
+  narratorComment?: string;
+  payload: AnnualSlidePayload;
+}
+
+export type AnnualSlidePayload =
+  | { year: number; totalActivity: number }
+  | { count: number; label: string; titles?: string[] }
+  | { title: string; country: string; type: string; rating: number }
+  | { name: string; count: number; all: [string, number][] }
+  | { countryCount: number; topCountry?: string; topCountryCount?: number }
+  | { genreCount: number; topGenre?: string; topGenreCount?: number }
+  | { achievements: Array<{ title: string; type: string }> }
+  | { rank: string; emoji: string }
+  | { entries: AnnualRankingEntry[]; drawerYear: number }
+  | { year: number };
+
+export interface AnnualWrappedContextValue {
+  snapshots: AnnualWrappedSnapshot[];
+  pendingSnapshot: AnnualWrappedSnapshot | null;
+  activeSnapshot: AnnualWrappedSnapshot | null;
+  historyOpen: boolean;
+  isReady: boolean;
+  viewSnapshot: (snapshot: AnnualWrappedSnapshot) => void;
+  dismissPresentation: () => void;
+  openHistory: () => void;
+  closeHistory: () => void;
+  replaySnapshot: (year: number) => void;
+}

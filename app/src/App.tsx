@@ -2,12 +2,15 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppProvider, useApp } from '@/context/AppContext';
 import { WrappedProvider } from '@/context/WrappedContext';
+import { AnnualWrappedProvider } from '@/context/AnnualWrappedContext';
 import Header from '@/components/Header';
 import SidebarNav, { type TabId } from '@/components/SidebarNav';
 import MilestoneModal from '@/components/MilestoneModal';
 import PWAUpdatePrompt from '@/components/PWAUpdatePrompt';
 import { WrappedPresentationContainer } from '@/components/wrapped/WrappedPresentation';
 import WrappedHistory from '@/components/wrapped/WrappedHistory';
+import { AnnualWrappedPresentationContainer } from '@/components/wrapped/AnnualWrappedPresentation';
+import AnnualWrappedHistory from '@/components/wrapped/AnnualWrappedHistory';
 // Overview is the landing tab — keep it eager so first paint is instant
 import OverviewTab from '@/components/tabs/OverviewTab';
 import './App.css';
@@ -140,6 +143,9 @@ function AppContent() {
       {/* Monthly BL Wrapped — auto-present + history sheet */}
       <WrappedPresentationContainer />
       <WrappedHistory />
+      {/* Annual BL Wrapped — yearly finale + permanent history */}
+      <AnnualWrappedPresentationContainer />
+      <AnnualWrappedHistory />
     </div>
   );
 }
@@ -148,8 +154,10 @@ function App() {
   return (
     <AppProvider>
       <WrappedProvider>
-        <AppContent />
-        <PWAUpdatePrompt />
+        <AnnualWrappedProvider>
+          <AppContent />
+          <PWAUpdatePrompt />
+        </AnnualWrappedProvider>
       </WrappedProvider>
     </AppProvider>
   );

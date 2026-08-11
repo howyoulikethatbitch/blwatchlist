@@ -32,7 +32,10 @@ const APP_VERSION = '1.3.8';
 export default function SettingsTab() {
   const { state, dispatch } = useApp();
   const { openHistory, snapshots } = useWrapped();
-  const { openHistory: openAnnualHistory, snapshots: annualSnapshots } = useAnnualWrapped();
+  const {
+    openAnnualHistory,
+    annualSnapshots,
+  } = useAnnualWrapped();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unviewedCount = snapshots.filter(s => !s.isViewed).length;
   const unviewedAnnualCount = annualSnapshots.filter(s => !s.isViewed).length;

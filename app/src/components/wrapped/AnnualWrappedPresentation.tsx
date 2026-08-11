@@ -325,14 +325,19 @@ export default function AnnualWrappedPresentation({ snapshot, onDismiss }: { sna
 }
 
 export function AnnualWrappedPresentationContainer() {
-  const { activeSnapshot, pendingSnapshot, viewSnapshot, dismissPresentation } = useAnnualWrapped();
+  const {
+    activeAnnualSnapshot,
+    pendingAnnualSnapshot,
+    viewAnnualSnapshot,
+    dismissAnnualPresentation,
+  } = useAnnualWrapped();
   const [autoPresented, setAutoPresented] = useState(false);
   useEffect(() => {
-    if (!autoPresented && pendingSnapshot) {
+    if (!autoPresented && pendingAnnualSnapshot) {
       setAutoPresented(true);
-      viewSnapshot(pendingSnapshot);
+      viewAnnualSnapshot(pendingAnnualSnapshot);
     }
-  }, [autoPresented, pendingSnapshot, viewSnapshot]);
-  if (!activeSnapshot) return null;
-  return <AnimatePresence><AnnualWrappedPresentation key={activeSnapshot.year} snapshot={activeSnapshot} onDismiss={dismissPresentation} /></AnimatePresence>;
+  }, [autoPresented, pendingAnnualSnapshot, viewAnnualSnapshot]);
+  if (!activeAnnualSnapshot) return null;
+  return <AnimatePresence><AnnualWrappedPresentation key={activeAnnualSnapshot.year} snapshot={activeAnnualSnapshot} onDismiss={dismissAnnualPresentation} /></AnimatePresence>;
 }

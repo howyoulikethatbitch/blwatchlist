@@ -1,0 +1,50 @@
+name: Build Windows Desktop App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Package BL Watchlist for Windows
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install web dependencies
+        working-directory: app
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build bundled offline web app
+        working-directory: app
+        run: |
+          pnpm exec tsc -b
+          pnpm exec vite build
+
+      - name: Install desktop packaging dependencies
+        working-directory: desktop
+        run: npm install
+
+      - name: Build Windows installer
+        working-directory: desktop
+        run: npm run package:win
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: bl-watchlist-windows
+          path: desktop/release/*.exe

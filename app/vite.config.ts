@@ -6,6 +6,9 @@ import { VitePWA } from "vite-plugin-pwa"
 // https://vite.dev/config/
 export default defineConfig(async ({ mode }) => {
   const isProd = mode === 'production';
+  const isGitHubPagesBuild = process.env.VITE_DEPLOY_TARGET === 'github-pages';
+  const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? 'blwatchlist';
+  const appBase = isGitHubPagesBuild ? `/${repositoryName}/` : './';
 
   // Only load the dev-inspect plugin in non-production builds
   const devPlugins: Plugin[] = [];
@@ -19,7 +22,7 @@ export default defineConfig(async ({ mode }) => {
   }
 
   return {
-    base: './',
+    base: appBase,
     plugins: [
       ...devPlugins,
       react(),
@@ -36,8 +39,10 @@ export default defineConfig(async ({ mode }) => {
           background_color: '#0a0a0a',
           display: 'standalone',
           orientation: 'portrait',
-          scope: '/',
-          start_url: '/',
+          // GitHub Pages project sites live below /<repository>/; using an
+          // absolute root here makes an installed PWA launch into a 404.
+          scope: appBase,
+          start_url: appBase,
           icons: [
             {
               src: 'pwa-192x192.png',
@@ -62,7 +67,7 @@ export default defineConfig(async ({ mode }) => {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff,ttf}'],
           // Serve index.html for all navigation requests when offline
           // (fixes "offline" screen when launching the installed PWA)
-          navigateFallback: '/index.html',
+          navigateFallback: `${appBase}index.html`,
           // Runtime caching for Google Fonts
           runtimeCaching: [
             {

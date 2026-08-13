@@ -8,6 +8,12 @@
     "start": "electron .",
     "package:win": "electron-builder --win nsis --x64"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "electron-winstaller"
+    ]
+  },
   "devDependencies": {
     "electron": "^37.2.6",
     "electron-builder": "^26.0.12"
@@ -30,6 +36,7 @@
       }
     ],
     "win": {
+      "icon": "icon.ico",
       "target": [
         {
           "target": "nsis",

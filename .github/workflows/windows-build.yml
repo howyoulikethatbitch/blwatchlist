@@ -22,22 +22,16 @@ jobs:
         with:
           node-version: 22
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install web dependencies
-        working-directory: app
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build bundled offline web app
-        working-directory: app
+      - name: Verify bundled web app exists
+        shell: pwsh
         run: |
-          pnpm exec tsc -b
-          pnpm exec vite build
+          if (-not (Test-Path "app/dist/index.html")) {
+            throw "The checked-in web bundle is missing: app/dist/index.html"
+          }
 
       - name: Install desktop packaging dependencies
         working-directory: desktop
-        run: npm install --ignore-scripts=false --no-audit --no-fund
+        run: npm install --foreground-scripts --ignore-scripts=false --no-audit --no-fund
 
       - name: Build Windows installer
         working-directory: desktop

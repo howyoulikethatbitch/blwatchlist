@@ -37,7 +37,7 @@ jobs:
 
       - name: Install desktop packaging dependencies
         working-directory: desktop
-        run: npm install
+        run: npm install --ignore-scripts=false --no-audit --no-fund
 
       - name: Build Windows installer
         working-directory: desktop

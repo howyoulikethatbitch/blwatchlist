@@ -5,6 +5,7 @@ import { useApp } from "@/context/AppContext";
 import Poster from "../Poster";
 import AirDaySelector from "../AirDaySelector";
 import type { AirDay, Entry } from "@/types";
+import { getOngoingSchedule } from "@/lib/episodeSchedule";
 import EntryModal from "../EntryModal";
 import CalendarSheet from "../CalendarSheet";
 
@@ -12,6 +13,7 @@ const OngoingCard = memo(function OngoingCard({
   entryId,
   entry,
   ongoingData,
+  schedule,
   todayName,
   onEpisodeChange,
   onAirDaysChange,
@@ -20,12 +22,13 @@ const OngoingCard = memo(function OngoingCard({
   entryId: string;
   entry: { title: string; poster: string | null; country: string };
   ongoingData: { currentEpisode: number; totalEpisodes: number; airDays: AirDay[] };
+  schedule: ReturnType<typeof getOngoingSchedule>;
   todayName: AirDay;
   onEpisodeChange: (entryId: string, field: "currentEpisode" | "totalEpisodes", value: number) => void;
   onAirDaysChange: (entryId: string, days: AirDay[]) => void;
   onEntryClick: (entry: Entry) => void;
 }) {
-  const isAiringToday = ongoingData.airDays.includes(todayName);
+  const isAiringToday = schedule.isAiringToday;
   const progress = ongoingData.totalEpisodes > 0 ? (ongoingData.currentEpisode / ongoingData.totalEpisodes) * 100 : 0;
 
   return (
@@ -38,8 +41,10 @@ const OngoingCard = memo(function OngoingCard({
       }`}
     >
       {isAiringToday && (
-        <span className="absolute top-2 right-2 bg-[#E50914] text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10">
-          Airing Today
+        <span className={`absolute top-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 ${
+          schedule.isFinalEpisodeAiringToday ? "bg-amber-500" : "bg-[#E50914]"
+        }`}>
+          {schedule.isFinalEpisodeAiringToday ? "Final EP" : "Airing Today"}
         </span>
       )}
 
@@ -54,7 +59,7 @@ const OngoingCard = memo(function OngoingCard({
           {/* Episode Tracker */}
           <div className="mt-3 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[#B3B3B3]">Episode</span>
+              <span className="text-xs text-[#B3B3B3]">Watched</span>
               <input
                 type="number"
                 value={ongoingData.currentEpisode}
@@ -71,6 +76,18 @@ const OngoingCard = memo(function OngoingCard({
                 min={1}
               />
             </div>
+
+            {schedule.isConfigured ? (
+              <p className="text-xs text-[#B3B3B3]">
+                Latest aired: <span className="text-white font-medium">
+                  Ep {schedule.airedEpisode} / {ongoingData.totalEpisodes}
+                </span>
+              </p>
+            ) : (
+              <p className="text-[11px] text-amber-300/80">
+                Add the episode 1 release date to auto-track aired episodes.
+              </p>
+            )}
 
             {/* Progress Bar */}
             <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
@@ -144,10 +161,11 @@ export default function OngoingTab() {
         return {
           entry,
           ongoingData,
+          schedule: ongoingData ? getOngoingSchedule(ongoingData) : null,
         };
       })
-      .filter((item): item is { entry: Entry; ongoingData: NonNullable<typeof item.ongoingData> } =>
-        item.ongoingData !== undefined
+      .filter((item): item is { entry: Entry; ongoingData: NonNullable<typeof item.ongoingData>; schedule: ReturnType<typeof getOngoingSchedule> } =>
+        item.ongoingData !== undefined && item.schedule !== null
       );
 
     // Apply filter
@@ -405,12 +423,13 @@ export default function OngoingTab() {
 
       {/* Ongoing Cards */}
       <div className="space-y-3 w-full">
-        {ongoingEntries.map(({ entry, ongoingData }) => (
+        {ongoingEntries.map(({ entry, ongoingData, schedule }) => (
           <OngoingCard
             key={entry.id}
             entryId={entry.id}
             entry={entry}
             ongoingData={ongoingData}
+            schedule={schedule}
             todayName={todayName}
             onEpisodeChange={handleEpisodeChange}
             onAirDaysChange={handleAirDaysChange}
@@ -427,10 +446,18 @@ export default function OngoingTab() {
           .filter((e) => e.status === "ONGOING")
           .map((entry) => {
             const ongoingData = getOngoingByEntryId(entry.id);
-            return { entry, ongoingData };
+            return {
+              entry,
+              ongoingData,
+              schedule: ongoingData ? getOngoingSchedule(ongoingData) : null,
+            };
           })
-          .filter((item): item is { entry: Entry; ongoingData: NonNullable<typeof item.ongoingData> } =>
-            item.ongoingData !== undefined
+          .filter((item): item is {
+            entry: Entry;
+            ongoingData: NonNullable<typeof item.ongoingData>;
+            schedule: ReturnType<typeof getOngoingSchedule>;
+          } =>
+            item.ongoingData !== undefined && item.schedule !== null
           )}
         plannedEntries={plannedEntries}
         onEntryClick={setSelectedEntry}

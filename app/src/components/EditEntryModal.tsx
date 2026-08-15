@@ -43,6 +43,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
   const [airDays, setAirDays] = useState<AirDay[]>([]);
   const [currentEp, setCurrentEp] = useState(0);
   const [totalEp, setTotalEp] = useState(1);
+  const [firstAirDate, setFirstAirDate] = useState('');
   const [plannedDate, setPlannedDate] = useState('');
   const [error, setError] = useState('');
 
@@ -62,10 +63,15 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
         setAirDays(ongoing.airDays as AirDay[]);
         setCurrentEp(ongoing.currentEpisode);
         setTotalEp(ongoing.totalEpisodes);
+        setFirstAirDate(
+          ongoing.firstAirDate ||
+          (entry.status === 'PLANNED' ? entry.plannedDate || '' : '')
+        );
       } else {
         setAirDays([]);
         setCurrentEp(0);
         setTotalEp(1);
+        setFirstAirDate('');
       }
     } else {
       setTitle('');
@@ -78,6 +84,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
       setAirDays([]);
       setCurrentEp(0);
       setTotalEp(1);
+      setFirstAirDate('');
     }
     setError('');
   }, [entry, ongoing]);
@@ -132,7 +139,8 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
           entryId: newEntry.id,
           currentEpisode: currentEp,
           totalEpisodes: totalEp,
-          airDays: airDays.length > 0 ? airDays : ['Monday'] as AirDay[]
+            airDays: airDays.length > 0 ? airDays : ['Monday'] as AirDay[],
+            ...(firstAirDate ? { firstAirDate } : {}),
         }
       });
     }
@@ -291,9 +299,24 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
             <div className="space-y-3 bg-white/[0.04] rounded-xl p-4">
               <Label className="text-[#B3B3B3]">Air Days</Label>
               <AirDaySelector value={airDays} onChange={setAirDays} />
+              <div className="space-y-2">
+                <Label className="text-[#B3B3B3]">
+                  Episode 1 Release Date <span className="text-[#666] text-xs">(optional)</span>
+                </Label>
+                <input
+                  type="date"
+                  value={firstAirDate}
+                  onChange={e => setFirstAirDate(e.target.value)}
+                  className="w-full h-9 bg-white/[0.06] border border-white/10 rounded-lg px-3 text-sm text-white focus:border-[#E50914] outline-none [color-scheme:dark]"
+                />
+                <p className="text-[10px] text-[#666]">
+                  Add the date episode 1 aired to automatically calculate the latest released episode.
+                  Leave blank to use manual tracking.
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[10px] text-[#666]">Current Episode</Label>
+                  <Label className="text-[10px] text-[#666]">Watched Episode</Label>
                   <Input
                     type="number"
                     value={currentEp}

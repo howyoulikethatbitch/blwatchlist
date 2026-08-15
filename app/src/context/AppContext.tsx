@@ -93,6 +93,24 @@ function migrateEntry(e: Record<string, unknown>): Entry {
   };
 }
 
+function migrateOngoing(o: Record<string, unknown>): OngoingEntry | null {
+  if (typeof o.entryId !== 'string' || !o.entryId) return null;
+
+  const airDays = Array.isArray(o.airDays)
+    ? o.airDays.filter((day): day is AirDay => AIR_DAYS.includes(day as AirDay))
+    : [];
+
+  return {
+    entryId: o.entryId,
+    currentEpisode: typeof o.currentEpisode === 'number' ? Math.max(0, o.currentEpisode) : 0,
+    totalEpisodes: typeof o.totalEpisodes === 'number' ? Math.max(1, o.totalEpisodes) : 1,
+    airDays: airDays.length > 0 ? airDays : ['Monday'],
+    ...(typeof o.firstAirDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.firstAirDate)
+      ? { firstAirDate: o.firstAirDate }
+      : {}),
+  };
+}
+
 function validateData(data: unknown): AppState {
   if (!data || typeof data !== 'object') return { ...initialState };
   const d = data as Record<string, unknown>;
@@ -150,7 +168,9 @@ function validateData(data: unknown): AppState {
 
   return {
     entries: migratedEntries as unknown as Entry[],
-    ongoing: ongoing as OngoingEntry[],
+    ongoing: ongoing
+      .map((o) => migrateOngoing(o as Record<string, unknown>))
+      .filter((o): o is OngoingEntry => o !== null),
     favorites: validFavorites,
     top10Drawers: validTop10Drawers,
     ongoingYear,

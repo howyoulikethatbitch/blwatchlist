@@ -5,6 +5,7 @@ import { useApp } from '@/context/AppContext';
 import Poster from '../Poster';
 import EntryModal from '../EntryModal';
 import type { Entry } from '@/types';
+import { getOngoingSchedule } from '@/lib/episodeSchedule';
 
 /* ============================================================
    Airing Today - 3D Coverflow Carousel
@@ -13,7 +14,11 @@ function AiringTodayCarousel({
   airingToday,
   onEntryClick
 }: {
-  airingToday: { entry: Entry; ongoing: { currentEpisode: number; totalEpisodes: number; airDays: string[] } }[];
+  airingToday: {
+    entry: Entry;
+    ongoing: { currentEpisode: number; totalEpisodes: number; airDays: string[] };
+    schedule: ReturnType<typeof getOngoingSchedule>;
+  }[];
   onEntryClick: (entry: Entry) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -201,9 +206,23 @@ function AiringTodayCarousel({
                           {item.ongoing.airDays.join(', ')}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="text-[#E50914] text-[11px] font-bold px-2 py-0.5 bg-[#E50914]/20 rounded-full">
-                            Ep {item.ongoing.currentEpisode} / {item.ongoing.totalEpisodes}
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                            item.schedule.isFinalEpisodeAiringToday
+                              ? 'text-amber-300 bg-amber-500/20'
+                              : 'text-[#E50914] bg-[#E50914]/20'
+                          }`}>
+                            {item.schedule.isFinalEpisodeAiringToday ? 'Final EP' : 'Airing Today'}
                           </span>
+                        </div>
+                        <div className="mt-1 space-y-0.5 text-[10px]">
+                          <p className="text-[#B3B3B3]">
+                            Watched: Ep {item.ongoing.currentEpisode} / {item.ongoing.totalEpisodes}
+                          </p>
+                          {item.schedule.isConfigured && (
+                            <p className="text-white">
+                              Latest aired: Ep {item.schedule.airedEpisode} / {item.ongoing.totalEpisodes}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
@@ -414,9 +433,15 @@ export default function OverviewTab() {
       .filter(o => o.airDays.includes(today as typeof o.airDays[number]))
       .map(o => {
         const entry = state.entries.find(e => e.id === o.entryId);
-        return entry ? { entry, ongoing: o } : null;
+          return entry
+            ? { entry, ongoing: o, schedule: getOngoingSchedule(o) }
+            : null;
       })
-      .filter(Boolean) as { entry: Entry; ongoing: typeof state.ongoing[number] }[];
+       .filter(Boolean) as {
+         entry: Entry;
+         ongoing: typeof state.ongoing[number];
+         schedule: ReturnType<typeof getOngoingSchedule>;
+       }[];
   }, [state, today]);
 
   // Entries for Recently Added (General List only)

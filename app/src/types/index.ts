@@ -21,6 +21,8 @@ export interface OngoingEntry {
   currentEpisode: number;
   totalEpisodes: number;
   airDays: AirDay[];
+  /** Date on which episode 1 was released, stored as YYYY-MM-DD. */
+  firstAirDate?: string;
 }
 
 export interface FavoriteEntry {

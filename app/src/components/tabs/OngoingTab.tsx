@@ -14,7 +14,6 @@ const OngoingCard = memo(function OngoingCard({
   entry,
   ongoingData,
   schedule,
-  todayName,
   onEpisodeChange,
   onAirDaysChange,
   onEntryClick,
@@ -23,7 +22,6 @@ const OngoingCard = memo(function OngoingCard({
   entry: { title: string; poster: string | null; country: string };
   ongoingData: { currentEpisode: number; totalEpisodes: number; airDays: AirDay[] };
   schedule: ReturnType<typeof getOngoingSchedule>;
-  todayName: AirDay;
   onEpisodeChange: (entryId: string, field: "currentEpisode" | "totalEpisodes", value: number) => void;
   onAirDaysChange: (entryId: string, days: AirDay[]) => void;
   onEntryClick: (entry: Entry) => void;
@@ -430,7 +428,6 @@ export default function OngoingTab() {
             entry={entry}
             ongoingData={ongoingData}
             schedule={schedule}
-            todayName={todayName}
             onEpisodeChange={handleEpisodeChange}
             onAirDaysChange={handleAirDaysChange}
             onEntryClick={setSelectedEntry}

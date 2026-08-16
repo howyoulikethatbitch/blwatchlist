@@ -4,7 +4,7 @@ import { PlayCircle, ArrowUpDown, Filter, Pencil, Check, X, Calendar } from "luc
 import { useApp } from "@/context/AppContext";
 import Poster from "../Poster";
 import AirDaySelector from "../AirDaySelector";
-import type { AirDay, Entry } from "@/types";
+import type { AirDay, Entry, OngoingEntry } from "@/types";
 import { getOngoingSchedule } from "@/lib/episodeSchedule";
 import EntryModal from "../EntryModal";
 import CalendarSheet from "../CalendarSheet";
@@ -20,7 +20,7 @@ const OngoingCard = memo(function OngoingCard({
 }: {
   entryId: string;
   entry: { title: string; poster: string | null; country: string };
-  ongoingData: { currentEpisode: number; totalEpisodes: number; airDays: AirDay[] };
+  ongoingData: OngoingEntry;
   schedule: ReturnType<typeof getOngoingSchedule>;
   onEpisodeChange: (entryId: string, field: "currentEpisode" | "totalEpisodes", value: number) => void;
   onAirDaysChange: (entryId: string, days: AirDay[]) => void;
@@ -97,14 +97,20 @@ const OngoingCard = memo(function OngoingCard({
               />
             </div>
 
-            {/* Air Days */}
-            <div className="pt-1">
-              <span className="text-xs text-[#B3B3B3] mr-2">Air Days:</span>
-              <AirDaySelector
-                value={ongoingData.airDays}
-                onChange={(days: AirDay[]) => onAirDaysChange(entryId, days)}
-              />
-            </div>
+            {ongoingData.trackingMode === 'calendar' ? (
+              <div className="pt-1 text-xs text-[#B3B3B3]">
+                Release Calendar: <span className="text-white">{ongoingData.releaseDates?.length || 0} dates selected</span>
+              </div>
+            ) : (
+              /* Air Days */
+              <div className="pt-1">
+                <span className="text-xs text-[#B3B3B3] mr-2">Air Days:</span>
+                <AirDaySelector
+                  value={ongoingData.airDays}
+                  onChange={(days: AirDay[]) => onAirDaysChange(entryId, days)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -134,6 +140,20 @@ const dayFilters: { value: FilterType; label: string }[] = [
   { value: "Saturday", label: "Sat" },
   { value: "Sunday", label: "Sun" },
 ];
+
+const airDayFromDate = (value: string): AirDay | null => {
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  const days: AirDay[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  return days[date.getDay()];
+};
+
+const matchesAirDay = (ongoing: OngoingEntry, day: AirDay): boolean => {
+  if (ongoing.trackingMode === 'calendar') {
+    return (ongoing.releaseDates || []).some((date) => airDayFromDate(date) === day);
+  }
+  return ongoing.airDays.includes(day);
+};
 
 export default function OngoingTab() {
   const { state, dispatch, getOngoingByEntryId } = useApp();
@@ -168,17 +188,17 @@ export default function OngoingTab() {
 
     // Apply filter
     if (filter === "today") {
-      result = result.filter(({ ongoingData }) => ongoingData.airDays.includes(todayName));
+      result = result.filter(({ schedule }) => schedule.isAiringToday);
     } else if (filter !== "all") {
-      result = result.filter(({ ongoingData }) => ongoingData.airDays.includes(filter as AirDay));
+      result = result.filter(({ ongoingData }) => matchesAirDay(ongoingData, filter as AirDay));
     }
 
     // Apply sort
     result = [...result].sort((a, b) => {
       switch (sort) {
         case "airDay": {
-          const aHasToday = a.ongoingData.airDays.includes(todayName) ? 0 : 1;
-          const bHasToday = b.ongoingData.airDays.includes(todayName) ? 0 : 1;
+          const aHasToday = a.schedule.isAiringToday ? 0 : 1;
+          const bHasToday = b.schedule.isAiringToday ? 0 : 1;
           return aHasToday - bHasToday || a.entry.title.localeCompare(b.entry.title);
         }
         case "year": return b.entry.year - a.entry.year;

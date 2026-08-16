@@ -15,6 +15,16 @@ const DAY_LABELS: Record<AirDay, string> = {
   Sunday: "Sun",
 };
 
+function parseReleaseDate(value: string): Date | null {
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function airDayFromDate(date: Date): AirDay {
+  const days: AirDay[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  return days[date.getDay()];
+}
+
 interface CalendarSheetProps {
   isOpen: boolean;
   onClose: () => void;
@@ -40,7 +50,15 @@ export default function CalendarSheet({
       map.set(day, []);
     }
     for (const item of ongoingEntries) {
-      for (const day of item.ongoingData.airDays) {
+      const days = item.ongoingData.trackingMode === 'calendar'
+        ? [...new Set(
+            (item.ongoingData.releaseDates || [])
+              .map(parseReleaseDate)
+              .filter((date): date is Date => date !== null)
+              .map(airDayFromDate),
+          )]
+        : item.ongoingData.airDays;
+      for (const day of days) {
         const existing = map.get(day) || [];
         existing.push(item);
         map.set(day, existing);
@@ -62,6 +80,21 @@ export default function CalendarSheet({
 
     // Add ongoing entries with their air days in the next 14 days
     for (const { entry, ongoingData } of ongoingEntries) {
+      if (ongoingData.trackingMode === 'calendar') {
+        for (const releaseDate of ongoingData.releaseDates || []) {
+          const date = parseReleaseDate(releaseDate);
+          if (!date) continue;
+          const daysUntil = Math.floor(
+            (date.getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) /
+              (24 * 60 * 60 * 1000),
+          );
+          if (daysUntil >= 0 && daysUntil <= 14) {
+            result.push({ date, entry, type: "ongoing", ongoingData });
+          }
+        }
+        continue;
+      }
+
       for (const airDay of ongoingData.airDays) {
         const dayIndex = WEEK_DAYS.indexOf(airDay);
         const todayIndex = WEEK_DAYS.indexOf(todayName);

@@ -1,5 +1,14 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef, useState } from 'react';
-import type { AppState, AppAction, Entry, OngoingEntry, FavoriteEntry, Top10Drawer, AirDay } from '@/types';
+import type {
+  AppState,
+  AppAction,
+  Entry,
+  OngoingEntry,
+  FavoriteEntry,
+  Top10Drawer,
+  AirDay,
+  OngoingTrackingMode,
+} from '@/types';
 import { saveToIndexedDB, loadFromIndexedDB } from '@/hooks/useIndexedDB';
 import type { Milestone, MilestoneType } from '@/components/MilestoneModal';
 import { trackWrappedEvent } from '@/lib/wrappedTracker';
@@ -111,6 +120,15 @@ function migrateOngoing(o: Record<string, unknown>): OngoingEntry | null {
     premiereEpisodeCount: typeof o.premiereEpisodeCount === 'number'
       ? Math.max(1, Math.floor(o.premiereEpisodeCount))
       : 1,
+    trackingMode: o.trackingMode === 'calendar' ? 'calendar' as OngoingTrackingMode : 'recurring',
+    releaseDates: Array.isArray(o.releaseDates)
+      ? [...new Set(
+          o.releaseDates.filter(
+            (date): date is string =>
+              typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date),
+          ),
+        )].sort()
+      : [],
   };
 }
 

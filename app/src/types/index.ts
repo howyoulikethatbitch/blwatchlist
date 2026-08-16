@@ -3,6 +3,7 @@ import type { Milestone } from '@/components/MilestoneModal';
 export type Status = 'COMPLETE' | 'ONGOING' | 'DROPPED' | 'PLANNED';
 
 export type AirDay = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+export type OngoingTrackingMode = 'recurring' | 'calendar';
 
 export interface Entry {
   id: string;
@@ -25,6 +26,10 @@ export interface OngoingEntry {
   firstAirDate?: string;
   /** Number of episodes released on the premiere date. Defaults to 1. */
   premiereEpisodeCount?: number;
+  /** Use exact release dates instead of a recurring weekday schedule. */
+  trackingMode?: OngoingTrackingMode;
+  /** Dates on which one episode is scheduled to release, stored as YYYY-MM-DD. */
+  releaseDates?: string[];
 }
 
 export interface FavoriteEntry {

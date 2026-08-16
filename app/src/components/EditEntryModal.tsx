@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Camera, X } from 'lucide-react';
+import { CalendarDays, Camera, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/select';
 import { useApp } from '@/context/AppContext';
 import AirDaySelector from './AirDaySelector';
-import type { Entry, Status, AirDay } from '@/types';
+import type { Entry, Status, AirDay, OngoingTrackingMode } from '@/types';
+import EpisodeReleaseCalendar from './EpisodeReleaseCalendar';
 
 const COUNTRIES = [
   'Thailand', 'Japan', 'South Korea', 'Taiwan', 'China', 'Philippines',
@@ -45,6 +46,9 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
   const [totalEp, setTotalEp] = useState(1);
   const [firstAirDate, setFirstAirDate] = useState('');
   const [premiereEpCount, setPremiereEpCount] = useState(1);
+  const [trackingMode, setTrackingMode] = useState<OngoingTrackingMode>('recurring');
+  const [releaseDates, setReleaseDates] = useState<string[]>([]);
+  const [releaseCalendarOpen, setReleaseCalendarOpen] = useState(false);
   const [plannedDate, setPlannedDate] = useState('');
   const [error, setError] = useState('');
 
@@ -69,12 +73,16 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
           (entry.status === 'PLANNED' ? entry.plannedDate || '' : '')
         );
         setPremiereEpCount(ongoing.premiereEpisodeCount || 1);
+        setTrackingMode(ongoing.trackingMode || 'recurring');
+        setReleaseDates(ongoing.releaseDates || []);
       } else {
         setAirDays([]);
         setCurrentEp(0);
         setTotalEp(1);
         setFirstAirDate('');
         setPremiereEpCount(1);
+        setTrackingMode('recurring');
+        setReleaseDates([]);
       }
     } else {
       setTitle('');
@@ -89,6 +97,8 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
       setTotalEp(1);
       setFirstAirDate('');
       setPremiereEpCount(1);
+      setTrackingMode('recurring');
+      setReleaseDates([]);
     }
     setError('');
   }, [entry, ongoing]);
@@ -146,6 +156,8 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
             airDays: airDays.length > 0 ? airDays : ['Monday'] as AirDay[],
             ...(firstAirDate ? { firstAirDate } : {}),
             premiereEpisodeCount: Math.max(1, premiereEpCount),
+            trackingMode,
+            releaseDates,
         }
       });
     }
@@ -302,39 +314,88 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
           {/* Ongoing Air Days & Episodes */}
           {status === 'ONGOING' && (
             <div className="space-y-3 bg-white/[0.04] rounded-xl p-4">
-              <Label className="text-[#B3B3B3]">Air Days</Label>
-              <AirDaySelector value={airDays} onChange={setAirDays} />
-              <div className="space-y-2">
-                <Label className="text-[#B3B3B3]">
-                  Episode 1 Release Date <span className="text-[#666] text-xs">(optional)</span>
-                </Label>
-                <input
-                  type="date"
-                  value={firstAirDate}
-                  onChange={e => setFirstAirDate(e.target.value)}
-                  className="w-full h-9 bg-white/[0.06] border border-white/10 rounded-lg px-3 text-sm text-white focus:border-[#E50914] outline-none [color-scheme:dark]"
-                />
-                <p className="text-[10px] text-[#666]">
-                  Add the premiere date to automatically calculate the latest released episode.
-                  Leave blank to use manual tracking.
-                </p>
+              <Label className="text-[#B3B3B3]">Auto-track Method</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTrackingMode('recurring')}
+                  className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                    trackingMode === 'recurring'
+                      ? 'bg-[#E50914] text-white'
+                      : 'bg-white/[0.06] text-[#888] hover:bg-white/[0.1]'
+                  }`}
+                >
+                  Recurring Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTrackingMode('calendar')}
+                  className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                    trackingMode === 'calendar'
+                      ? 'bg-[#E50914] text-white'
+                      : 'bg-white/[0.06] text-[#888] hover:bg-white/[0.1]'
+                  }`}
+                >
+                  <CalendarDays className="w-3.5 h-3.5" />
+                  Release Calendar
+                </button>
               </div>
-              <div className="space-y-2">
-                <Label className="text-[#B3B3B3]">
-                  Episodes Released on Premiere <span className="text-[#666] text-xs">(optional)</span>
-                </Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={premiereEpCount}
-                  onChange={e => setPremiereEpCount(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="bg-white/[0.06] border-white/10 text-white"
-                />
-                <p className="text-[10px] text-[#666]">
-                  Use 2 or more if multiple episodes premiered on the first day.
-                  Later airing days count as one episode each.
-                </p>
-              </div>
+
+              {trackingMode === 'recurring' ? (
+                <>
+                  <Label className="text-[#B3B3B3]">Air Days</Label>
+                  <AirDaySelector value={airDays} onChange={setAirDays} />
+                  <div className="space-y-2">
+                    <Label className="text-[#B3B3B3]">
+                      Premiere Date <span className="text-[#666] text-xs">(optional)</span>
+                    </Label>
+                    <input
+                      type="date"
+                      value={firstAirDate}
+                      onChange={e => setFirstAirDate(e.target.value)}
+                      className="w-full h-9 bg-white/[0.06] border border-white/10 rounded-lg px-3 text-sm text-white focus:border-[#E50914] outline-none [color-scheme:dark]"
+                    />
+                    <p className="text-[10px] text-[#666]">
+                      Add the premiere date to automatically calculate the latest released episode.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[#B3B3B3]">
+                      Episodes Released on Premiere <span className="text-[#666] text-xs">(optional)</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={premiereEpCount}
+                      onChange={e => setPremiereEpCount(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="bg-white/[0.06] border-white/10 text-white"
+                    />
+                    <p className="text-[10px] text-[#666]">
+                      Use 2 or more if multiple episodes premiered on the first day.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setReleaseCalendarOpen(true)}
+                    className="w-full flex items-center justify-between gap-3 rounded-lg bg-white/[0.06] border border-white/10 px-3 py-2.5 text-left hover:bg-white/[0.1] transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-[#E50914]" />
+                      <span className="text-sm text-white">Edit episode release dates</span>
+                    </span>
+                    <span className="text-xs text-[#B3B3B3]">
+                      {releaseDates.length} selected
+                    </span>
+                  </button>
+                  <p className="text-[10px] text-[#666]">
+                    Select each date an episode airs. You can edit this calendar anytime when the schedule changes.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-[10px] text-[#666]">Watched Episode</Label>
@@ -357,6 +418,13 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
               </div>
             </div>
           )}
+
+          <EpisodeReleaseCalendar
+            isOpen={releaseCalendarOpen}
+            onClose={() => setReleaseCalendarOpen(false)}
+            releaseDates={releaseDates}
+            onSave={setReleaseDates}
+          />
 
           {/* Cancel & Save Buttons */}
           <div className="flex gap-3 pt-2">

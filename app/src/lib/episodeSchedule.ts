@@ -41,6 +41,29 @@ function dateKey(date: Date): string {
   ].join('-');
 }
 
+function getCalendarSchedule(
+  ongoing: Pick<OngoingEntry, 'totalEpisodes' | 'releaseDates'>,
+  today: Date,
+): OngoingSchedule {
+  const releaseDates = [...new Set(ongoing.releaseDates || [])]
+    .filter((value) => parseDateOnly(value) !== null)
+    .sort();
+  const todayKey = dateKey(today);
+  const releasedThroughToday = releaseDates.filter((value) => value <= todayKey).length;
+  const releasedBeforeToday = releaseDates.filter((value) => value < todayKey).length;
+  const isAiringToday = releaseDates.includes(todayKey);
+
+  return {
+    airedEpisode: Math.min(ongoing.totalEpisodes, releasedThroughToday),
+    isAiringToday,
+    isFinalEpisodeAiringToday:
+      isAiringToday &&
+      releasedBeforeToday < ongoing.totalEpisodes &&
+      releasedThroughToday >= ongoing.totalEpisodes,
+    isConfigured: releaseDates.length > 0,
+  };
+}
+
 function countReleasedEpisodes(
   firstAirDate: Date,
   throughDate: Date,
@@ -73,7 +96,12 @@ function countReleasedEpisodes(
 export function getOngoingSchedule(
   ongoing: Pick<
     OngoingEntry,
-    'firstAirDate' | 'airDays' | 'totalEpisodes' | 'premiereEpisodeCount'
+    | 'firstAirDate'
+    | 'airDays'
+    | 'totalEpisodes'
+    | 'premiereEpisodeCount'
+    | 'trackingMode'
+    | 'releaseDates'
   >,
   now = new Date(),
 ): OngoingSchedule {
@@ -84,6 +112,10 @@ export function getOngoingSchedule(
     Math.floor(ongoing.premiereEpisodeCount ?? 1),
   );
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (ongoing.trackingMode === 'calendar') {
+    return getCalendarSchedule(ongoing, today);
+  }
+
   const isPremiereDay = firstAirDate
     ? today.getTime() === firstAirDate.getTime()
     : false;

@@ -78,7 +78,14 @@ export default function EpisodeReleaseCalendar({
               selected={selectedDates}
               onSelect={(dates) => setSelectedDates(dates || [])}
               numberOfMonths={1}
-              className="bg-transparent [--cell-size:2.5rem]"
+              className="bg-transparent [--cell-size:2.5rem] p-0"
+              classNames={{
+                table: 'w-full border border-white/15 rounded-lg overflow-hidden',
+                weekdays: 'grid grid-cols-7 bg-white/[0.04]',
+                weekday: 'flex h-9 items-center justify-center border-r border-b border-white/15 text-[#A3A3A3] text-xs font-medium last:border-r-0',
+                week: 'grid grid-cols-7 mt-0',
+                day: 'relative h-(--cell-size) w-full border-r border-b border-white/15 p-0 text-center last:border-r-0',
+              }}
             />
           </div>
 

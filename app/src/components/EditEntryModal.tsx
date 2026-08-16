@@ -44,6 +44,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
   const [currentEp, setCurrentEp] = useState(0);
   const [totalEp, setTotalEp] = useState(1);
   const [firstAirDate, setFirstAirDate] = useState('');
+  const [premiereEpCount, setPremiereEpCount] = useState(1);
   const [plannedDate, setPlannedDate] = useState('');
   const [error, setError] = useState('');
 
@@ -67,11 +68,13 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
           ongoing.firstAirDate ||
           (entry.status === 'PLANNED' ? entry.plannedDate || '' : '')
         );
+        setPremiereEpCount(ongoing.premiereEpisodeCount || 1);
       } else {
         setAirDays([]);
         setCurrentEp(0);
         setTotalEp(1);
         setFirstAirDate('');
+        setPremiereEpCount(1);
       }
     } else {
       setTitle('');
@@ -85,6 +88,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
       setCurrentEp(0);
       setTotalEp(1);
       setFirstAirDate('');
+      setPremiereEpCount(1);
     }
     setError('');
   }, [entry, ongoing]);
@@ -141,6 +145,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
           totalEpisodes: totalEp,
             airDays: airDays.length > 0 ? airDays : ['Monday'] as AirDay[],
             ...(firstAirDate ? { firstAirDate } : {}),
+            premiereEpisodeCount: Math.max(1, premiereEpCount),
         }
       });
     }
@@ -310,8 +315,24 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
                   className="w-full h-9 bg-white/[0.06] border border-white/10 rounded-lg px-3 text-sm text-white focus:border-[#E50914] outline-none [color-scheme:dark]"
                 />
                 <p className="text-[10px] text-[#666]">
-                  Add the date episode 1 aired to automatically calculate the latest released episode.
+                  Add the premiere date to automatically calculate the latest released episode.
                   Leave blank to use manual tracking.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#B3B3B3]">
+                  Episodes Released on Premiere <span className="text-[#666] text-xs">(optional)</span>
+                </Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={premiereEpCount}
+                  onChange={e => setPremiereEpCount(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="bg-white/[0.06] border-white/10 text-white"
+                />
+                <p className="text-[10px] text-[#666]">
+                  Use 2 or more if multiple episodes premiered on the first day.
+                  Later airing days count as one episode each.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">

@@ -45,11 +45,15 @@ function countReleasedEpisodes(
   firstAirDate: Date,
   throughDate: Date,
   airDays: Set<AirDay>,
+  premiereEpisodeCount: number,
 ): number {
   if (throughDate < firstAirDate) return 0;
 
+  // The premiere date can release a batch of episodes. Subsequent selected
+  // air days contribute one episode each.
   const cursor = new Date(firstAirDate);
-  let count = 0;
+  let count = premiereEpisodeCount;
+  cursor.setDate(cursor.getDate() + 1);
   while (cursor <= throughDate) {
     if (airDays.has(AIR_DAYS_BY_INDEX[cursor.getDay()])) {
       count += 1;
@@ -67,14 +71,24 @@ function countReleasedEpisodes(
  * entry remains in the existing manual-tracking mode.
  */
 export function getOngoingSchedule(
-  ongoing: Pick<OngoingEntry, 'firstAirDate' | 'airDays' | 'totalEpisodes'>,
+  ongoing: Pick<
+    OngoingEntry,
+    'firstAirDate' | 'airDays' | 'totalEpisodes' | 'premiereEpisodeCount'
+  >,
   now = new Date(),
 ): OngoingSchedule {
   const firstAirDate = ongoing.firstAirDate ? parseDateOnly(ongoing.firstAirDate) : null;
   const airDays = new Set(ongoing.airDays);
+  const premiereEpisodeCount = Math.max(
+    1,
+    Math.floor(ongoing.premiereEpisodeCount ?? 1),
+  );
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isPremiereDay = firstAirDate
+    ? today.getTime() === firstAirDate.getTime()
+    : false;
   const isAiringToday =
-    airDays.has(AIR_DAYS_BY_INDEX[today.getDay()]) &&
+    (isPremiereDay || airDays.has(AIR_DAYS_BY_INDEX[today.getDay()])) &&
     (!firstAirDate || today >= firstAirDate);
 
   if (!firstAirDate || airDays.size === 0 || ongoing.totalEpisodes <= 0) {
@@ -88,8 +102,18 @@ export function getOngoingSchedule(
 
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  const releasedThroughToday = countReleasedEpisodes(firstAirDate, today, airDays);
-  const releasedBeforeToday = countReleasedEpisodes(firstAirDate, yesterday, airDays);
+  const releasedThroughToday = countReleasedEpisodes(
+    firstAirDate,
+    today,
+    airDays,
+    premiereEpisodeCount,
+  );
+  const releasedBeforeToday = countReleasedEpisodes(
+    firstAirDate,
+    yesterday,
+    airDays,
+    premiereEpisodeCount,
+  );
   const airedEpisode = Math.min(ongoing.totalEpisodes, releasedThroughToday);
   const isFinalEpisodeAiringToday =
     isAiringToday &&

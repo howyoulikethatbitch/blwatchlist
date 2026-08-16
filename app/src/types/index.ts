@@ -23,6 +23,8 @@ export interface OngoingEntry {
   airDays: AirDay[];
   /** Date on which episode 1 was released, stored as YYYY-MM-DD. */
   firstAirDate?: string;
+  /** Number of episodes released on the premiere date. Defaults to 1. */
+  premiereEpisodeCount?: number;
 }
 
 export interface FavoriteEntry {

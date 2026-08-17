@@ -69,6 +69,7 @@ export const initialState: AppState = {
   entries: [],
   ongoing: [],
   favorites: [],
+  ratings: [],
   top10Drawers: [],
   ongoingYear: new Date().getFullYear(),
   watchingSince: null,
@@ -138,6 +139,9 @@ function validateData(data: unknown): AppState {
   const entries = Array.isArray(d.entries) ? d.entries : [];
   const ongoing = Array.isArray(d.ongoing) ? d.ongoing : [];
   const favorites = Array.isArray(d.favorites) ? d.favorites : [];
+  // Older backups kept evaluation data inside favorites. Preserve it as the
+  // initial rating set when the new independent ratings collection is absent.
+  const ratings = Array.isArray(d.ratings) ? d.ratings : favorites;
   const top10Drawers = Array.isArray(d.top10Drawers) ? d.top10Drawers : [];
   const ongoingYear = typeof d.ongoingYear === 'number' ? d.ongoingYear : new Date().getFullYear();
   const watchingSince = typeof d.watchingSince === 'number' ? d.watchingSince : null;
@@ -173,6 +177,26 @@ function validateData(data: unknown): AppState {
       overallRating: typeof f.overallRating === 'number' ? f.overallRating : 5.0,
     })) as unknown as FavoriteEntry[];
 
+  const validRatings = (ratings as unknown as Record<string, unknown>[])
+    .filter((r) => migratedEntries.some((e: Entry) => e.id === r.entryId))
+    .map((r) => ({
+      entryId: (r.entryId as string) || '',
+      storyline: typeof r.storyline === 'number' ? r.storyline : 5,
+      acting: typeof r.acting === 'number' ? r.acting : 5,
+      music: typeof r.music === 'number' ? r.music : 5,
+      chemistry: typeof r.chemistry === 'number' ? r.chemistry : 5,
+      cinematography: typeof r.cinematography === 'number' ? r.cinematography : 5,
+      originality: Boolean(r.originality),
+      flowAndPacing: Boolean(r.flowAndPacing),
+      characterDepth: Boolean(r.characterDepth),
+      relationshipDynamics: Boolean(r.relationshipDynamics),
+      emotionalImpact: Boolean(r.emotionalImpact),
+      ending: Boolean(r.ending),
+      rewatchValue: Boolean(r.rewatchValue),
+      gapPenalty: typeof r.gapPenalty === 'number' ? r.gapPenalty : 0,
+      overallRating: typeof r.overallRating === 'number' ? r.overallRating : 5.0,
+    })) as unknown as FavoriteEntry[];
+
   // Clean up: remove top10 entries for dropped entries
   const validTop10Drawers = (top10Drawers as unknown as Record<string, unknown>[]).map((td) => ({
     year: typeof td.year === 'number' ? td.year : new Date().getFullYear(),
@@ -193,6 +217,7 @@ function validateData(data: unknown): AppState {
       .map((o) => migrateOngoing(o as Record<string, unknown>))
       .filter((o): o is OngoingEntry => o !== null),
     favorites: validFavorites,
+    ratings: validRatings,
     top10Drawers: validTop10Drawers,
     ongoingYear,
     watchingSince,
@@ -276,16 +301,18 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
       // If status changed to DROPPED, remove from favorites and top10
       let favorites = state.favorites;
+      let ratings = state.ratings;
       let top10Drawers = state.top10Drawers;
       if (entry.status === 'DROPPED' && oldEntry?.status !== 'DROPPED') {
         favorites = state.favorites.filter(f => f.entryId !== entry.id);
+        ratings = state.ratings.filter(r => r.entryId !== entry.id);
         top10Drawers = state.top10Drawers.map(d => ({
           ...d,
           entries: d.entries.filter(e => e.entryId !== entry.id).map((e, i) => ({ ...e, rank: i + 1 }))
         }));
       }
 
-      return { ...state, entries, ongoing, favorites, top10Drawers };
+      return { ...state, entries, ongoing, favorites, ratings, top10Drawers };
     }
 
     case 'DELETE_ENTRY': {
@@ -295,6 +322,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         entries: state.entries.filter(e => e.id !== id),
         ongoing: state.ongoing.filter(o => o.entryId !== id),
         favorites: state.favorites.filter(f => f.entryId !== id),
+        ratings: state.ratings.filter(r => r.entryId !== id),
         top10Drawers: state.top10Drawers.map(d => ({
           ...d,
           entries: d.entries.filter(e => e.entryId !== id).map((e, i) => ({ ...e, rank: i + 1 }))
@@ -347,6 +375,25 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'REMOVE_FAVORITE':
       return { ...state, favorites: state.favorites.filter(f => f.entryId !== action.payload) };
+
+    case 'UPDATE_RATING': {
+      const updated = {
+        ...action.payload,
+        gapPenalty: calculateBonusEvaluation(action.payload),
+        overallRating: 0
+      };
+      updated.overallRating = calculateOverallRating(updated);
+      const exists = state.ratings.some(r => r.entryId === updated.entryId);
+      return {
+        ...state,
+        ratings: exists
+          ? state.ratings.map(r => r.entryId === updated.entryId ? updated : r)
+          : [...state.ratings, updated],
+      };
+    }
+
+    case 'REMOVE_RATING':
+      return { ...state, ratings: state.ratings.filter(r => r.entryId !== action.payload) };
 
     case 'UPDATE_ONGOING':
       return state.ongoing.find(o => o.entryId === action.payload.entryId)
@@ -469,7 +516,7 @@ async function migrateFromLocalStorage(): Promise<AppState | null> {
 // Load from IndexedDB (with localStorage migration fallback)
 async function loadInitialState(): Promise<AppState> {
   const indexedDBData = await loadFromIndexedDB();
-  if (indexedDBData && (indexedDBData.entries.length > 0 || indexedDBData.favorites.length > 0)) {
+  if (indexedDBData && (indexedDBData.entries.length > 0 || indexedDBData.favorites.length > 0 || indexedDBData.ratings.length > 0)) {
     return indexedDBData;
   }
   const migrated = await migrateFromLocalStorage();
@@ -488,12 +535,16 @@ interface AppContextValue {
   getEntryById: (id: string) => Entry | undefined;
   getOngoingByEntryId: (id: string) => OngoingEntry | undefined;
   getFavoriteByEntryId: (id: string) => FavoriteEntry | undefined;
+  getRatingByEntryId: (id: string) => FavoriteEntry | undefined;
   isFavorited: (id: string) => boolean;
   isInTop10: (id: string) => { year: number; rank: number } | null;
   checkMilestones: (type: MilestoneType, value: number) => void;
   celebrateMilestone: (milestone: Milestone) => void;
   dismissMilestone: () => void;
   currentMilestone: Milestone | null;
+  currentCompletion: Entry | null;
+  dismissCompletion: () => void;
+  openCompletion: (entry: Entry) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -502,7 +553,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [state, dispatch] = useReducer(appReducer, initialState);
   const [currentMilestone, setCurrentMilestone] = useState<Milestone | null>(null);
+  const [currentCompletion, setCurrentCompletion] = useState<Entry | null>(null);
   const initialized = useRef(false);
+  const previousEntries = useRef<Entry[] | null>(null);
 
   // Wrap dispatch to track wrapped activity as a fire-and-forget side effect
   const dispatchWithTracking = useCallback((action: AppAction) => {
@@ -514,7 +567,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (initialized.current) return;
     initialized.current = true;
     loadInitialState().then(loaded => {
-      if (loaded.entries.length > 0 || loaded.favorites.length > 0) {
+      if (loaded.entries.length > 0 || loaded.favorites.length > 0 || loaded.ratings.length > 0) {
         dispatch({ type: 'SET_STATE', payload: loaded });
       }
       setIsLoaded(true);
@@ -540,9 +593,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.milestoneQueue, currentMilestone]);
 
+  // Completion celebrations are observed centrally so status changes from
+  // every editor/search path receive the same celebration modal.
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!previousEntries.current) {
+      previousEntries.current = state.entries;
+      return;
+    }
+
+    const newlyCompleted = state.entries.find((entry) => {
+      if (entry.status !== 'COMPLETE') return false;
+      const previous = previousEntries.current?.find((item) => item.id === entry.id);
+      return !previous || previous.status !== 'COMPLETE';
+    });
+    previousEntries.current = state.entries;
+
+    if (newlyCompleted) setCurrentCompletion(newlyCompleted);
+  }, [state.entries, isLoaded]);
+
   const getEntryById = useCallback((id: string) => state.entries.find(e => e.id === id), [state.entries]);
   const getOngoingByEntryId = useCallback((id: string) => state.ongoing.find(o => o.entryId === id), [state.ongoing]);
   const getFavoriteByEntryId = useCallback((id: string) => state.favorites.find(f => f.entryId === id), [state.favorites]);
+  const getRatingByEntryId = useCallback((id: string) => state.ratings.find(r => r.entryId === id), [state.ratings]);
   const isFavorited = useCallback((id: string) => state.favorites.some(f => f.entryId === id), [state.favorites]);
   const isInTop10 = useCallback((id: string) => {
     for (const drawer of state.top10Drawers) {
@@ -619,15 +692,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCurrentMilestone(null);
   }, []);
 
+  const dismissCompletion = useCallback(() => {
+    setCurrentCompletion(null);
+  }, []);
+
+  const openCompletion = useCallback((entry: Entry) => {
+    setCurrentCompletion(entry);
+  }, []);
+
   return (
     <AppContext.Provider value={{
       state, dispatch: dispatchWithTracking, isLoaded,
-      getEntryById, getOngoingByEntryId, getFavoriteByEntryId,
+      getEntryById, getOngoingByEntryId, getFavoriteByEntryId, getRatingByEntryId,
       isFavorited, isInTop10,
       checkMilestones,
       celebrateMilestone,
       dismissMilestone,
       currentMilestone,
+      currentCompletion,
+      dismissCompletion,
+      openCompletion,
     }}>
       {children}
     </AppContext.Provider>

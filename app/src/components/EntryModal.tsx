@@ -12,11 +12,11 @@ interface EntryModalProps {
 }
 
 export default function EntryModal({ isOpen, onClose, entry }: EntryModalProps) {
-  const { dispatch, isFavorited, getFavoriteByEntryId } = useApp();
+  const { dispatch, isFavorited, getRatingByEntryId } = useApp();
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const favorited = entry ? isFavorited(entry.id) : false;
-  const favorite = entry ? getFavoriteByEntryId(entry.id) : null;
+  const rating = entry ? getRatingByEntryId(entry.id) : null;
 
   // Reset image loaded state when entry changes
   useEffect(() => {
@@ -62,14 +62,14 @@ export default function EntryModal({ isOpen, onClose, entry }: EntryModalProps) 
           </button>
 
           {/* Rating - top right (leaving space for X button at right: 16px) */}
-          {favorite && favorite.overallRating > 0 && (
+          {rating && rating.overallRating > 0 && (
             <div
               className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-sm"
               style={{ marginRight: '32px' }}
             >
               <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
               <span className="text-yellow-400 font-bold text-sm" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {favorite.overallRating.toFixed(1)}
+                 {rating.overallRating.toFixed(1)}
               </span>
             </div>
           )}

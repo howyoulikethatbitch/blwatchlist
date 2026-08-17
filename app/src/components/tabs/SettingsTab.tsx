@@ -90,6 +90,7 @@ export default function SettingsTab() {
       entries: state.entries,
       ongoing: state.ongoing,
       favorites: state.favorites,
+      ratings: state.ratings,
       top10Drawers: state.top10Drawers,
       ongoingYear: state.ongoingYear,
       watchingSince: state.watchingSince
@@ -212,6 +213,9 @@ export default function SettingsTab() {
             gapPenalty: typeof f.gapPenalty === 'number' ? f.gapPenalty : 0.7,
             overallRating: typeof f.overallRating === 'number' ? f.overallRating : 4.3,
           })) as AppState['favorites'] : [],
+          ratings: Array.isArray(data.ratings)
+            ? data.ratings as AppState['ratings']
+            : (Array.isArray(data.favorites) ? data.favorites as AppState['ratings'] : []),
           top10Drawers: Array.isArray(data.top10Drawers) ? (data.top10Drawers as Array<Record<string, unknown>>).map((td: Record<string, unknown>) => ({
             year: typeof td.year === 'number' ? td.year : new Date().getFullYear(),
             entries: Array.isArray(td.entries) ? (td.entries as Array<Record<string, unknown>>).map((e: Record<string, unknown>) => ({
@@ -231,6 +235,7 @@ export default function SettingsTab() {
           entries: processedEntries as unknown as AppState['entries'],
           ongoing: [],
           favorites: [],
+          ratings: [],
           top10Drawers: [],
           ongoingYear: new Date().getFullYear(),
           watchingSince: null,

@@ -53,6 +53,14 @@ export default function SidebarNav({ activeTab, onTabChange }: SidebarNavProps) 
     return () => document.removeEventListener('mousedown', handler);
   }, [isOpen]);
 
+  // Completion actions can navigate directly to Top 10; close the mobile
+  // drawer at the same time so the destination is immediately visible.
+  useEffect(() => {
+    const handler = () => setIsOpen(false);
+    window.addEventListener('bl-navigate-tab', handler);
+    return () => window.removeEventListener('bl-navigate-tab', handler);
+  }, []);
+
   // Close on escape key
   useEffect(() => {
     if (!isOpen) return;

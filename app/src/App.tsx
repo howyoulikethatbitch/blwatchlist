@@ -11,6 +11,8 @@ import { WrappedPresentationContainer } from '@/components/wrapped/WrappedPresen
 import WrappedHistory from '@/components/wrapped/WrappedHistory';
 import { AnnualWrappedPresentationContainer } from '@/components/wrapped/AnnualWrappedPresentation';
 import AnnualWrappedHistory from '@/components/wrapped/AnnualWrappedHistory';
+import FavoriteEvaluation from '@/components/FavoriteEvaluation';
+import CompletionCelebrationModal from '@/components/CompletionCelebrationModal';
 // Overview is the landing tab — keep it eager so first paint is instant
 import OverviewTab from '@/components/tabs/OverviewTab';
 import './App.css';
@@ -41,10 +43,19 @@ function TabFallback() {
 }
 
 function AppContent() {
-  const { isLoaded, currentMilestone, dismissMilestone } = useApp();
+  const {
+    isLoaded,
+    currentMilestone,
+    dismissMilestone,
+    currentCompletion,
+    dismissCompletion,
+    dispatch,
+  } = useApp();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [completionRatingOpen, setCompletionRatingOpen] = useState(false);
+  const [completionRatingEntryId, setCompletionRatingEntryId] = useState<string | null>(null);
 
   // Handle import events from SettingsTab
   useEffect(() => {
@@ -56,6 +67,15 @@ function AppContent() {
     };
     window.addEventListener('bl-import', handler);
     return () => window.removeEventListener('bl-import', handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const customEvent = event as CustomEvent<TabId>;
+      if (customEvent.detail) setActiveTab(customEvent.detail);
+    };
+    window.addEventListener('bl-navigate-tab', handler);
+    return () => window.removeEventListener('bl-navigate-tab', handler);
   }, []);
 
   // Handle profile open events from SettingsTab post-import prompt
@@ -138,6 +158,36 @@ function AppContent() {
         isOpen={!!currentMilestone}
         milestone={currentMilestone}
         onClose={dismissMilestone}
+      />
+
+      <CompletionCelebrationModal
+        entry={currentCompletion}
+        onClose={dismissCompletion}
+        onRate={() => {
+          setCompletionRatingEntryId(currentCompletion?.id ?? null);
+          setCompletionRatingOpen(true);
+          dismissCompletion();
+        }}
+        onFavorite={() => {
+          if (currentCompletion) {
+            dispatch({ type: 'TOGGLE_FAVORITE', payload: currentCompletion.id });
+          }
+          dismissCompletion();
+        }}
+        onTop10={() => {
+          dismissCompletion();
+          window.dispatchEvent(new CustomEvent('bl-navigate-tab', { detail: 'top10' }));
+        }}
+      />
+      <FavoriteEvaluation
+        isOpen={completionRatingOpen}
+        onClose={() => {
+          setCompletionRatingOpen(false);
+          setCompletionRatingEntryId(null);
+        }}
+        entryId={completionRatingEntryId}
+        initialMode="edit"
+        evaluationType="rating"
       />
 
       {/* Monthly BL Wrapped — auto-present + history sheet */}

@@ -478,6 +478,7 @@ interface FavoriteEvaluationProps {
   onClose: () => void;
   entryId: string | null;
   initialMode?: 'view' | 'edit';
+  evaluationType?: 'favorite' | 'rating';
 }
 
 export default function FavoriteEvaluation({
@@ -485,8 +486,17 @@ export default function FavoriteEvaluation({
   onClose,
   entryId,
   initialMode = 'view',
+  evaluationType = 'favorite',
 }: FavoriteEvaluationProps) {
-  const { dispatch, getEntryById, getFavoriteByEntryId, isFavorited, checkMilestones, state } = useApp();
+  const {
+    dispatch,
+    getEntryById,
+    getFavoriteByEntryId,
+    getRatingByEntryId,
+    isFavorited,
+    checkMilestones,
+    state,
+  } = useApp();
   const [mode, setMode] = useState<'view' | 'edit'>(initialMode);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [isFirstOpen, setIsFirstOpen] = useState(true);
@@ -506,7 +516,11 @@ export default function FavoriteEvaluation({
   const [rewatchValue, setRewatchValue] = useState(false);
 
   const entry = entryId ? getEntryById(entryId) : null;
-  const existingFavorite = entryId ? getFavoriteByEntryId(entryId) : null;
+  const existingFavorite = entryId
+    ? evaluationType === 'rating'
+      ? getRatingByEntryId(entryId)
+      : getFavoriteByEntryId(entryId)
+    : null;
   const favorited = entryId ? isFavorited(entryId) : false;
 
   // Reset mode when modal opens
@@ -588,7 +602,9 @@ export default function FavoriteEvaluation({
       overallRating,
     };
 
-    if (favorited && existingFavorite) {
+    if (evaluationType === 'rating') {
+      dispatch({ type: 'UPDATE_RATING', payload: favoriteData });
+    } else if (favorited && existingFavorite) {
       dispatch({ type: 'UPDATE_FAVORITE', payload: favoriteData });
     } else {
       dispatch({ type: 'TOGGLE_FAVORITE', payload: entryId });
@@ -601,12 +617,14 @@ export default function FavoriteEvaluation({
       checkMilestones('PERFECT_RATING', overallRating);
     }
 
-    // Check for favorites milestone
-    const favoritesCount = state.favorites.length + (existingFavorite ? 0 : 1);
-    checkMilestones('FAVORITES_MILESTONE', favoritesCount);
+    if (evaluationType === 'favorite') {
+      // Check for favorites milestone
+      const favoritesCount = state.favorites.length + (existingFavorite ? 0 : 1);
+      checkMilestones('FAVORITES_MILESTONE', favoritesCount);
+    }
 
     setMode('view');
-  }, [entryId, storyline, acting, music, chemistry, cinematography, originality, flowAndPacing, characterDepth, relationshipDynamics, emotionalImpact, ending, rewatchValue, overallRating, favorited, existingFavorite, dispatch, checkMilestones, state.favorites.length]);
+  }, [entryId, storyline, acting, music, chemistry, cinematography, originality, flowAndPacing, characterDepth, relationshipDynamics, emotionalImpact, ending, rewatchValue, overallRating, favorited, existingFavorite, evaluationType, dispatch, checkMilestones, state.favorites.length]);
 
   const handleRemove = useCallback(() => {
     if (!entryId) return;
@@ -650,7 +668,11 @@ export default function FavoriteEvaluation({
           <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-sm px-5 pt-5 pb-3 border-b border-white/[0.06]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Heart className="w-4 h-4 text-[#E50914] flex-shrink-0" />
+                {evaluationType === 'rating' ? (
+                  <span className="text-yellow-400 text-sm">★</span>
+                ) : (
+                  <Heart className="w-4 h-4 text-[#E50914] flex-shrink-0" />
+                )}
                 <h2 className="text-sm font-bold text-white truncate">
                   {entry.title}
                 </h2>
@@ -749,7 +771,7 @@ export default function FavoriteEvaluation({
             ) : (
               /* EDIT MODE: Remove (left) + Cancel + Save (right) */
               <div className="flex items-center gap-3">
-                {favorited && (
+                {evaluationType === 'favorite' && favorited && (
                   <button
                     onClick={() => setShowRemoveConfirm(true)}
                     className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.06] text-[#B3B3B3] text-sm font-medium hover:bg-red-500/15 hover:text-red-400 transition-colors"

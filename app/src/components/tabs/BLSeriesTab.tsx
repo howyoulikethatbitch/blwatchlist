@@ -38,6 +38,8 @@ const EntryCard = memo(function EntryCard({
   favorited,
   top10Info,
   onOpenFavorite,
+  onRate,
+  onToggleFavorite,
   onAddToTop10,
   onEdit,
   onDelete,
@@ -48,6 +50,8 @@ const EntryCard = memo(function EntryCard({
   favorited: boolean;
   top10Info: { year: number; rank: number } | null;
   onOpenFavorite: (entry: Entry) => void;
+  onRate: (entry: Entry) => void;
+  onToggleFavorite: (entry: Entry) => void;
   onAddToTop10: (entry: Entry) => void;
   onEdit: (entry: Entry) => void;
   onDelete: (id: string) => void;
@@ -91,7 +95,7 @@ const EntryCard = memo(function EntryCard({
       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           <button
-            onClick={() => onOpenFavorite(entry)}
+            onClick={() => onToggleFavorite(entry)}
             disabled={entry.status === 'DROPPED'}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium tap-active transition-colors ${
               favorited
@@ -104,6 +108,15 @@ const EntryCard = memo(function EntryCard({
           >
             <Heart className={`w-3 h-3 ${favorited ? "fill-current" : ""}`} />
             <span className="hidden sm:inline">Favorite</span>
+          </button>
+
+          <button
+            onClick={() => onRate(entry)}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium tap-active transition-colors bg-white/[0.06] text-[#B3B3B3] hover:bg-white/[0.1]"
+            title="Rate this entry"
+          >
+            <Star className="w-3 h-3 text-yellow-400" />
+            <span className="hidden sm:inline">Rate</span>
           </button>
 
           {top10Info ? (
@@ -163,6 +176,7 @@ export default function BLSeriesTab() {
   const [favEvalOpen, setFavEvalOpen] = useState(false);
   const [favEvalEntryId, setFavEvalEntryId] = useState<string | null>(null);
   const [favEvalMode, setFavEvalMode] = useState<'view' | 'edit'>('view');
+  const [evaluationType, setEvaluationType] = useState<'favorite' | 'rating'>('favorite');
 
   const filteredAndSortedEntries = useMemo(() => {
     let entries = state.entries.filter((e) => {
@@ -224,12 +238,18 @@ export default function BLSeriesTab() {
     setDeleteConfirm(null);
   }, [dispatch]);
 
-  const handleOpenFavorite = useCallback((entry: Entry) => {
-    const favorited = isFavorited(entry.id);
+  const handleToggleFavorite = useCallback((entry: Entry) => {
+    if (entry.status !== 'DROPPED') {
+      dispatch({ type: "TOGGLE_FAVORITE", payload: entry.id });
+    }
+  }, [dispatch]);
+
+  const handleRate = useCallback((entry: Entry) => {
     setFavEvalEntryId(entry.id);
-    setFavEvalMode(favorited ? 'view' : 'edit');
+    setFavEvalMode('view');
+    setEvaluationType('rating');
     setFavEvalOpen(true);
-  }, [isFavorited]);
+  }, []);
 
   const handleAddToTop10 = useCallback((entry: Entry) => {
     const drawer = state.top10Drawers.find((d) => d.year === entry.year);
@@ -325,7 +345,9 @@ export default function BLSeriesTab() {
                   entry={entry}
                   favorited={favorited}
                   top10Info={top10Info}
-                  onOpenFavorite={handleOpenFavorite}
+                  onOpenFavorite={handleRate}
+                  onRate={handleRate}
+                  onToggleFavorite={handleToggleFavorite}
                   onAddToTop10={handleAddToTop10}
                   onEdit={handleEdit}
                   onDelete={setDeleteConfirm}
@@ -359,6 +381,7 @@ export default function BLSeriesTab() {
         onClose={() => { setFavEvalOpen(false); setFavEvalEntryId(null); }}
         entryId={favEvalEntryId}
         initialMode={favEvalMode}
+        evaluationType={evaluationType}
       />
 
       {/* Delete Confirmation */}

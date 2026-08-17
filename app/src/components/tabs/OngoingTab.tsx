@@ -17,6 +17,7 @@ const OngoingCard = memo(function OngoingCard({
   onEpisodeChange,
   onAirDaysChange,
   onEntryClick,
+  onFinishPrompt,
 }: {
   entryId: string;
   entry: { title: string; poster: string | null; country: string };
@@ -25,9 +26,12 @@ const OngoingCard = memo(function OngoingCard({
   onEpisodeChange: (entryId: string, field: "currentEpisode" | "totalEpisodes", value: number) => void;
   onAirDaysChange: (entryId: string, days: AirDay[]) => void;
   onEntryClick: (entry: Entry) => void;
+  onFinishPrompt: (entryId: string, schedule: ReturnType<typeof getOngoingSchedule>, ongoingData: OngoingEntry) => boolean;
 }) {
   const isAiringToday = schedule.isAiringToday;
   const progress = ongoingData.totalEpisodes > 0 ? (ongoingData.currentEpisode / ongoingData.totalEpisodes) * 100 : 0;
+  const [isAskingFinished, setIsAskingFinished] = useState(false);
+  const [verificationError, setVerificationError] = useState(false);
 
   return (
     <motion.div
@@ -113,6 +117,48 @@ const OngoingCard = memo(function OngoingCard({
             )}
           </div>
         </div>
+
+            {schedule.isFinalEpisodeAiringToday && (
+              <div className="text-xs">
+                {verificationError ? (
+                  <p className="text-amber-300/90">
+                    This series is currently airing. Please complete all available episodes.
+                  </p>
+                ) : isAskingFinished ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#B3B3B3]">Have you finished watching this title?</span>
+                    <button
+                      onClick={() => {
+                        const passed = onFinishPrompt(entryId, schedule, ongoingData);
+                        if (!passed) {
+                          setVerificationError(true);
+                          setIsAskingFinished(false);
+                        }
+                      }}
+                      className="px-2 py-1 rounded-md bg-green-500/20 text-green-300 font-semibold hover:bg-green-500/30"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setIsAskingFinished(false)}
+                      className="px-2 py-1 rounded-md bg-white/[0.06] text-[#B3B3B3] font-semibold hover:bg-white/[0.1]"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setVerificationError(false);
+                      setIsAskingFinished(true);
+                    }}
+                    className="text-[#B3B3B3] hover:text-white underline underline-offset-2"
+                  >
+                    Have you finished watching this title?
+                  </button>
+                )}
+              </div>
+            )}
       </div>
     </motion.div>
   );
@@ -156,7 +202,7 @@ const matchesAirDay = (ongoing: OngoingEntry, day: AirDay): boolean => {
 };
 
 export default function OngoingTab() {
-  const { state, dispatch, getOngoingByEntryId } = useApp();
+  const { state, dispatch, getOngoingByEntryId, openCompletion } = useApp();
   const [sort, setSort] = useState<SortType>("airDay");
   const [filter, setFilter] = useState<FilterType>("all");
   const [showSort, setShowSort] = useState(false);
@@ -235,6 +281,27 @@ export default function OngoingTab() {
       payload: { ...existing, airDays: days },
     });
   }, [state.ongoing, dispatch]);
+
+  const handleFinishPrompt = useCallback((
+    entryId: string,
+    schedule: ReturnType<typeof getOngoingSchedule>,
+    ongoingData: OngoingEntry,
+  ): boolean => {
+    const entry = state.entries.find((item) => item.id === entryId);
+    const verificationPassed =
+      !!entry &&
+      schedule.isFinalEpisodeAiringToday &&
+      schedule.isConfigured &&
+      schedule.airedEpisode === ongoingData.totalEpisodes &&
+      ongoingData.currentEpisode === schedule.airedEpisode;
+
+    if (verificationPassed && entry) {
+      openCompletion(entry);
+      return true;
+    } else {
+      return false;
+    }
+  }, [state.entries, openCompletion]);
 
   const handleYearSave = useCallback(() => {
     const year = parseInt(yearInput);
@@ -451,6 +518,7 @@ export default function OngoingTab() {
             onEpisodeChange={handleEpisodeChange}
             onAirDaysChange={handleAirDaysChange}
             onEntryClick={setSelectedEntry}
+            onFinishPrompt={handleFinishPrompt}
           />
         ))}
       </div>

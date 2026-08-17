@@ -123,6 +123,7 @@ export interface AppState {
   entries: Entry[];
   ongoing: OngoingEntry[];
   favorites: FavoriteEntry[];
+  ratings: FavoriteEntry[];
   top10Drawers: Top10Drawer[];
   ongoingYear: number;
   watchingSince: number | null;
@@ -139,6 +140,7 @@ export interface FullBackup {
   entries: Entry[];
   ongoing: OngoingEntry[];
   favorites: FavoriteEntry[];
+  ratings: FavoriteEntry[];
   top10Drawers: Top10Drawer[];
   ongoingYear: number;
   watchingSince: number | null;
@@ -156,6 +158,8 @@ export type AppAction =
   | { type: 'TOGGLE_FAVORITE'; payload: string }
   | { type: 'UPDATE_FAVORITE'; payload: FavoriteEntry }
   | { type: 'REMOVE_FAVORITE'; payload: string }
+  | { type: 'UPDATE_RATING'; payload: FavoriteEntry }
+  | { type: 'REMOVE_RATING'; payload: string }
   | { type: 'UPDATE_ONGOING'; payload: OngoingEntry }
   | { type: 'ADD_TO_TOP10'; payload: { year: number; entryId: string } }
   | { type: 'REMOVE_FROM_TOP10'; payload: { year: number; entryId: string } }

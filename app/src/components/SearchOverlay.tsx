@@ -44,6 +44,8 @@ const SearchResultCard = memo(function SearchResultCard({
   canAddToTop10,
   onView,
   onOpenFavorite,
+  onRate,
+  onToggleFavorite,
   onAddToTop10,
   onEdit,
   onDelete,
@@ -54,6 +56,8 @@ const SearchResultCard = memo(function SearchResultCard({
   canAddToTop10: boolean;
   onView: (entry: Entry) => void;
   onOpenFavorite: (entry: Entry) => void;
+  onRate: (entry: Entry) => void;
+  onToggleFavorite: (entry: Entry) => void;
   onAddToTop10: (entry: Entry) => void;
   onEdit: (entry: Entry) => void;
   onDelete: (id: string) => void;
@@ -89,7 +93,7 @@ const SearchResultCard = memo(function SearchResultCard({
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {/* Favorite */}
           <button
-            onClick={() => onOpenFavorite(entry)}
+            onClick={() => onToggleFavorite(entry)}
             disabled={entry.status === 'DROPPED'}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium tap-active transition-colors ${
               favorited
@@ -102,6 +106,15 @@ const SearchResultCard = memo(function SearchResultCard({
           >
             <Heart className={`w-3 h-3 ${favorited ? 'fill-current' : ''}`} />
             <span className="hidden sm:inline">Fav</span>
+          </button>
+
+          <button
+            onClick={() => onRate(entry)}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium tap-active transition-colors bg-white/[0.06] text-[#B3B3B3] hover:bg-white/[0.1]"
+            title="Rate this entry"
+          >
+            <Star className="w-3 h-3 text-yellow-400" />
+            <span className="hidden sm:inline">Rate</span>
           </button>
 
           {/* Top 10 */}
@@ -164,6 +177,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const [favEvalOpen, setFavEvalOpen] = useState(false);
   const [favEvalEntryId, setFavEvalEntryId] = useState<string | null>(null);
   const [favEvalMode, setFavEvalMode] = useState<'view' | 'edit'>('view');
+  const [evaluationType, setEvaluationType] = useState<'favorite' | 'rating'>('favorite');
 
   // Delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -201,12 +215,18 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     setEditModalOpen(true);
   }, []);
 
-  const handleOpenFavorite = useCallback((entry: Entry) => {
-    const fav = isFavorited(entry.id);
+  const handleToggleFavorite = useCallback((entry: Entry) => {
+    if (entry.status !== 'DROPPED') {
+      dispatch({ type: 'TOGGLE_FAVORITE', payload: entry.id });
+    }
+  }, [dispatch]);
+
+  const handleRate = useCallback((entry: Entry) => {
     setFavEvalEntryId(entry.id);
-    setFavEvalMode(fav ? 'view' : 'edit');
+    setFavEvalMode('view');
+    setEvaluationType('rating');
     setFavEvalOpen(true);
-  }, [isFavorited]);
+  }, []);
 
   const handleAddToTop10 = useCallback((entry: Entry) => {
     const drawer = state.top10Drawers.find((d) => d.year === entry.year);
@@ -282,7 +302,9 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                         top10Info={top10Info}
                         canAddToTop10={canAddToTop10}
                         onView={handleView}
-                        onOpenFavorite={handleOpenFavorite}
+                        onOpenFavorite={handleRate}
+                        onRate={handleRate}
+                        onToggleFavorite={handleToggleFavorite}
                         onAddToTop10={handleAddToTop10}
                         onEdit={handleEdit}
                         onDelete={setDeleteConfirm}
@@ -316,6 +338,7 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         onClose={() => { setFavEvalOpen(false); setFavEvalEntryId(null); }}
         entryId={favEvalEntryId}
         initialMode={favEvalMode}
+        evaluationType={evaluationType}
       />
 
       {/* Delete Confirmation */}

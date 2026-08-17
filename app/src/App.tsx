@@ -50,6 +50,7 @@ function AppContent() {
     currentCompletion,
     dismissCompletion,
     dispatch,
+    isFavorited,
   } = useApp();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -169,7 +170,7 @@ function AppContent() {
           dismissCompletion();
         }}
         onFavorite={() => {
-          if (currentCompletion) {
+          if (currentCompletion && !isFavorited(currentCompletion.id)) {
             dispatch({ type: 'TOGGLE_FAVORITE', payload: currentCompletion.id });
           }
           dismissCompletion();

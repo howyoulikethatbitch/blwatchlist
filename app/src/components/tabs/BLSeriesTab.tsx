@@ -37,7 +37,6 @@ const EntryCard = memo(function EntryCard({
   entry,
   favorited,
   top10Info,
-  onOpenFavorite,
   onRate,
   onToggleFavorite,
   onAddToTop10,
@@ -49,7 +48,6 @@ const EntryCard = memo(function EntryCard({
   entry: Entry;
   favorited: boolean;
   top10Info: { year: number; rank: number } | null;
-  onOpenFavorite: (entry: Entry) => void;
   onRate: (entry: Entry) => void;
   onToggleFavorite: (entry: Entry) => void;
   onAddToTop10: (entry: Entry) => void;
@@ -345,7 +343,6 @@ export default function BLSeriesTab() {
                   entry={entry}
                   favorited={favorited}
                   top10Info={top10Info}
-                  onOpenFavorite={handleRate}
                   onRate={handleRate}
                   onToggleFavorite={handleToggleFavorite}
                   onAddToTop10={handleAddToTop10}

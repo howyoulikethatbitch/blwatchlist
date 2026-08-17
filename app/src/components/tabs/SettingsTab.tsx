@@ -285,6 +285,7 @@ export default function SettingsTab() {
         entries: [],
         ongoing: [],
         favorites: [],
+         ratings: [],
         top10Drawers: [],
         ongoingYear: new Date().getFullYear(),
         watchingSince: null,

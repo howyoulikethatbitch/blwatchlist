@@ -43,7 +43,6 @@ const SearchResultCard = memo(function SearchResultCard({
   top10Info,
   canAddToTop10,
   onView,
-  onOpenFavorite,
   onRate,
   onToggleFavorite,
   onAddToTop10,
@@ -55,7 +54,6 @@ const SearchResultCard = memo(function SearchResultCard({
   top10Info: { year: number; rank: number } | null;
   canAddToTop10: boolean;
   onView: (entry: Entry) => void;
-  onOpenFavorite: (entry: Entry) => void;
   onRate: (entry: Entry) => void;
   onToggleFavorite: (entry: Entry) => void;
   onAddToTop10: (entry: Entry) => void;
@@ -302,7 +300,6 @@ export default function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                         top10Info={top10Info}
                         canAddToTop10={canAddToTop10}
                         onView={handleView}
-                        onOpenFavorite={handleRate}
                         onRate={handleRate}
                         onToggleFavorite={handleToggleFavorite}
                         onAddToTop10={handleAddToTop10}

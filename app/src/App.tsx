@@ -79,6 +79,16 @@ function AppContent() {
     return () => window.removeEventListener('bl-navigate-tab', handler);
   }, []);
 
+  // Open the rating dialog only after the completion dialog has fully closed.
+  // Radix dialogs manage focus and pointer-events globally; opening both in
+  // the same click can leave the second dialog inaccessible or restore focus
+  // into the closing dialog.
+  useEffect(() => {
+    if (completionRatingEntryId && !currentCompletion) {
+      setCompletionRatingOpen(true);
+    }
+  }, [completionRatingEntryId, currentCompletion]);
+
   // Handle profile open events from SettingsTab post-import prompt
   useEffect(() => {
     const handler = () => {
@@ -165,13 +175,15 @@ function AppContent() {
         entry={currentCompletion}
         onClose={dismissCompletion}
         onRate={() => {
-          setCompletionRatingEntryId(currentCompletion?.id ?? null);
-          setCompletionRatingOpen(true);
+          const entryId = currentCompletion?.id;
+          if (!entryId) return;
+          setCompletionRatingEntryId(entryId);
           dismissCompletion();
         }}
         onFavorite={() => {
-          if (currentCompletion && !isFavorited(currentCompletion.id)) {
-            dispatch({ type: 'TOGGLE_FAVORITE', payload: currentCompletion.id });
+          const entry = currentCompletion;
+          if (entry && !isFavorited(entry.id)) {
+            dispatch({ type: 'TOGGLE_FAVORITE', payload: entry.id });
           }
           dismissCompletion();
         }}

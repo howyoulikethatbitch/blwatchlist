@@ -662,7 +662,7 @@ export default function FavoriteEvaluation({
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent
           showCloseButton={true}
-          className="bg-[#0a0a0a] border-white/[0.08] text-white max-w-[380px] p-0 overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+          className="bg-[#0a0a0a] border-white/[0.08] text-white w-[calc(100vw-1rem)] max-w-[380px] p-0 overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-sm px-5 pt-5 pb-3 border-b border-white/[0.06]">

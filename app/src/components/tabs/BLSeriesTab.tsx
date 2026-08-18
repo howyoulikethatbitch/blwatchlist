@@ -244,7 +244,10 @@ export default function BLSeriesTab() {
 
   const handleRate = useCallback((entry: Entry) => {
     setFavEvalEntryId(entry.id);
-    setFavEvalMode('view');
+    // Rate is an action, so open the reusable evaluator directly in edit mode.
+    // View mode makes the button appear to do nothing because the stars are
+    // intentionally non-interactive there.
+    setFavEvalMode('edit');
     setEvaluationType('rating');
     setFavEvalOpen(true);
   }, []);

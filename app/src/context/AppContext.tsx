@@ -123,12 +123,10 @@ function migrateOngoing(o: Record<string, unknown>): OngoingEntry | null {
       : 1,
     trackingMode: o.trackingMode === 'calendar' ? 'calendar' as OngoingTrackingMode : 'recurring',
     releaseDates: Array.isArray(o.releaseDates)
-      ? [...new Set(
-          o.releaseDates.filter(
-            (date): date is string =>
-              typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date),
-          ),
-        )].sort()
+      ? o.releaseDates.filter(
+          (date): date is string =>
+            typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date),
+        ).sort()
       : [],
   };
 }

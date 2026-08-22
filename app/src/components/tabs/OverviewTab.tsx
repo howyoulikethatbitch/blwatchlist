@@ -419,6 +419,46 @@ function RewatchPicksSection({
   );
 }
 
+const REWATCH_GROUPS = [
+  { country: 'Thailand', title: 'Thai BLs That Hit Different' },
+  { country: 'China', title: 'Chinese BLs Worth the Eternal Wait' },
+  { country: 'Japan', title: 'Senpai, Again? A Must-Rewatch JBLs' },
+  { country: 'South Korea', title: 'K-BLs You Can Binge in One Sitting' },
+  { country: 'Taiwan', title: 'Bold Taiwanese BLs on Repeat' },
+  { country: 'Other', title: 'Mainstream BLs That Live in Our Heads Rent-Free' },
+] as const;
+
+function CountryRewatchSections({ entries, onEntryClick }: { entries: Entry[]; onEntryClick: (entry: Entry) => void }) {
+  const groups = REWATCH_GROUPS.map((group) => ({
+    ...group,
+    entries: entries.filter((entry) => entry.status === 'COMPLETE' && entry.country === group.country).slice(0, 5),
+  })).filter((group) => group.entries.length > 0);
+
+  if (groups.length === 0) return null;
+
+  return (
+    <div className="space-y-6">
+      {groups.map((group) => (
+        <div key={group.country}>
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-yellow-400" />
+            <h2 className="text-white font-bold text-base">{group.title}</h2>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+            {group.entries.map((entry) => (
+              <button key={entry.id} onClick={() => onEntryClick(entry)} className="flex-shrink-0 w-28 text-left">
+                <Poster src={entry.poster} title={entry.title} size="lg" className="w-28 h-40 rounded-xl" />
+                <p className="text-white text-xs font-medium mt-2 truncate">{entry.title}</p>
+                <p className="text-[#888] text-[10px]">{entry.year}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ============================================================
    Main Overview Tab
    ============================================================ */
@@ -474,6 +514,11 @@ export default function OverviewTab() {
       <RewatchPicksSection
         entries={state.entries}
         favorites={favoritedEntries}
+        onEntryClick={setSelectedEntry}
+      />
+
+      <CountryRewatchSections
+        entries={state.entries}
         onEntryClick={setSelectedEntry}
       />
 

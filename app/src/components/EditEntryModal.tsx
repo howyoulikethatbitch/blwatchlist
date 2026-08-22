@@ -17,7 +17,7 @@ import type { Entry, Status, AirDay, OngoingTrackingMode } from '@/types';
 import EpisodeReleaseCalendar from './EpisodeReleaseCalendar';
 
 const COUNTRIES = [
-  'Thailand', 'Japan', 'South Korea', 'Taiwan', 'China', 'Philippines',
+  'Thailand', 'Japan', 'South Korea', 'Taiwan', 'China', 'Hong Kong', 'Philippines',
   'Vietnam', 'Singapore', 'Malaysia', 'Indonesia', 'India',
   'US', 'UK', 'Canada', 'Australia', 'Italy', 'Spain', 'France',
   'Germany', 'Netherlands', 'Belgium', 'Argentina', 'Brazil', 'Mexico',
@@ -276,7 +276,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
                     status === s ? 'bg-[#E50914] text-white' : 'bg-white/[0.06] text-[#888] hover:bg-white/[0.1]'
                   }`}
                 >
-                  {s === 'COMPLETE' ? 'Complete' : s === 'ONGOING' ? 'Ongoing' : s === 'DROPPED' ? 'Dropped' : 'Planned'}
+                  {s === 'COMPLETE' ? 'Completed' : s === 'ONGOING' ? 'Ongoing' : s === 'DROPPED' ? 'Dropped' : 'Planned'}
                 </button>
               ))}
             </div>

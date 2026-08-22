@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarDays, Check, RotateCcw, X } from 'lucide-react';
+import { CalendarDays, Check, Minus, Plus, RotateCcw, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -37,23 +37,41 @@ export default function EpisodeReleaseCalendar({
   onSave,
 }: EpisodeReleaseCalendarProps) {
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [episodeCounts, setEpisodeCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!isOpen) return;
-    setSelectedDates(
-      releaseDates
-        .map(keyToDate)
-        .filter((date): date is Date => date !== null),
-    );
+    const counts: Record<string, number> = {};
+    const dates = releaseDates
+      .map(keyToDate)
+      .filter((date): date is Date => date !== null);
+    dates.forEach((date) => {
+      const key = dateToKey(date);
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    setSelectedDates([...new Map(dates.map((date) => [dateToKey(date), date])).values()]);
+    setEpisodeCounts(counts);
   }, [isOpen, releaseDates]);
 
   const handleSave = () => {
-    onSave([...new Set(selectedDates.map(dateToKey))].sort());
+    const dates = selectedDates.flatMap((date) => {
+      const key = dateToKey(date);
+      return Array.from({ length: episodeCounts[key] || 1 }, () => key);
+    });
+    onSave(dates.sort());
     onClose();
   };
 
   const handleClear = () => {
     setSelectedDates([]);
+    setEpisodeCounts({});
+  };
+
+  const updateEpisodeCount = (key: string, change: number) => {
+    setEpisodeCounts((current) => {
+      const nextCount = Math.max(1, (current[key] || 1) + change);
+      return { ...current, [key]: nextCount };
+    });
   };
 
   return (
@@ -90,7 +108,7 @@ export default function EpisodeReleaseCalendar({
           </div>
 
           <div className="flex items-center justify-between text-xs text-[#B3B3B3]">
-            <span>{selectedDates.length} release date{selectedDates.length === 1 ? '' : 's'} selected</span>
+            <span>{selectedDates.length} release day{selectedDates.length === 1 ? '' : 's'} selected</span>
             <button
               type="button"
               onClick={handleClear}
@@ -100,6 +118,33 @@ export default function EpisodeReleaseCalendar({
               Clear
             </button>
           </div>
+
+          {selectedDates.length > 0 && (
+            <div className="space-y-2 max-h-36 overflow-y-auto">
+              {[...selectedDates].sort((a, b) => a.getTime() - b.getTime()).map((date) => {
+                const key = dateToKey(date);
+                const count = episodeCounts[key] || 1;
+                return (
+                  <div key={key} className="flex items-center justify-between rounded-lg bg-white/[0.04] px-3 py-2">
+                    <span className="text-xs text-[#B3B3B3]">
+                      {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => updateEpisodeCount(key, -1)} disabled={count <= 1}
+                        className="rounded-md bg-white/[0.08] p-1 text-white disabled:opacity-30" aria-label={`Decrease episodes on ${key}`}>
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="min-w-14 text-center text-xs text-white">{count} ep{count === 1 ? '' : 's'}</span>
+                      <button type="button" onClick={() => updateEpisodeCount(key, 1)}
+                        className="rounded-md bg-white/[0.08] p-1 text-white" aria-label={`Increase episodes on ${key}`}>
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-1">
             <Button

@@ -103,7 +103,7 @@ const OngoingCard = memo(function OngoingCard({
 
             {ongoingData.trackingMode === 'calendar' ? (
               <div className="pt-1 text-xs text-[#B3B3B3]">
-                Release Calendar: <span className="text-white">{ongoingData.releaseDates?.length || 0} dates selected</span>
+                Release Calendar: <span className="text-white">{ongoingData.releaseDates?.length || 0} episodes scheduled</span>
               </div>
             ) : (
               /* Air Days */

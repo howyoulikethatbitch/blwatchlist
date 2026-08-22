@@ -179,7 +179,7 @@ export default function FavoritesTab() {
 
           // Status badge colors
           const cardStatusConfig = {
-            'COMPLETE': { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Complete' },
+            'COMPLETE': { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Completed' },
             'ONGOING': { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Ongoing' },
             'DROPPED': { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Dropped' },
             'PLANNED': { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Planned' },

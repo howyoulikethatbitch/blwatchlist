@@ -92,15 +92,15 @@ const SearchResultCard = memo(function SearchResultCard({
           {/* Favorite */}
           <button
             onClick={() => onToggleFavorite(entry)}
-            disabled={entry.status === 'DROPPED'}
+            disabled={entry.status !== 'COMPLETE'}
             className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium tap-active transition-colors ${
               favorited
                 ? 'bg-[#FF2D7B]/15 text-[#FF2D7B]'
-                : entry.status === 'DROPPED'
+                : entry.status !== 'COMPLETE'
                 ? 'bg-white/[0.04] text-[#555] cursor-not-allowed'
                 : 'bg-white/[0.06] text-[#B3B3B3] hover:bg-white/[0.1]'
             }`}
-            title={entry.status === 'DROPPED' ? 'Dropped entries cannot be favorited' : ''}
+            title={entry.status !== 'COMPLETE' ? 'Only completed entries can be favorited' : ''}
           >
             <Heart className={`w-3 h-3 ${favorited ? 'fill-current' : ''}`} />
             <span className="hidden sm:inline">Fav</span>
@@ -108,8 +108,11 @@ const SearchResultCard = memo(function SearchResultCard({
 
           <button
             onClick={() => onRate(entry)}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium tap-active transition-colors bg-white/[0.06] text-[#B3B3B3] hover:bg-white/[0.1]"
-            title="Rate this entry"
+            disabled={entry.status !== 'COMPLETE'}
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium tap-active transition-colors ${
+              entry.status === 'COMPLETE' ? 'bg-white/[0.06] text-[#B3B3B3] hover:bg-white/[0.1]' : 'bg-white/[0.04] text-[#555] cursor-not-allowed'
+            }`}
+            title={entry.status === 'COMPLETE' ? 'Rate this entry' : 'Only completed entries can be rated'}
           >
             <Star className="w-3 h-3 text-yellow-400" />
             <span className="hidden sm:inline">Rate</span>
@@ -124,7 +127,7 @@ const SearchResultCard = memo(function SearchResultCard({
           ) : (
             <button
               onClick={() => onAddToTop10(entry)}
-              disabled={!canAddToTop10}
+              disabled={!canAddToTop10 || entry.status !== 'COMPLETE'}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-white/[0.06] text-[#B3B3B3] hover:bg-white/[0.1] tap-active disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Star className="w-3 h-3" />

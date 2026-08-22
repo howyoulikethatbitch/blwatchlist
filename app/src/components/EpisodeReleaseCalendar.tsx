@@ -74,6 +74,11 @@ export default function EpisodeReleaseCalendar({
     });
   };
 
+  const totalEpisodes = selectedDates.reduce(
+    (total, date) => total + (episodeCounts[dateToKey(date)] || 1),
+    0,
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="bg-[#141414] border-white/10 text-white max-w-md">
@@ -108,7 +113,10 @@ export default function EpisodeReleaseCalendar({
           </div>
 
           <div className="flex items-center justify-between text-xs text-[#B3B3B3]">
-            <span>{selectedDates.length} release day{selectedDates.length === 1 ? '' : 's'} selected</span>
+            <span>
+              {selectedDates.length} release date{selectedDates.length === 1 ? '' : 's'} selected
+            </span>
+            <span className="text-white/70">Total episodes: {totalEpisodes}</span>
             <button
               type="button"
               onClick={handleClear}

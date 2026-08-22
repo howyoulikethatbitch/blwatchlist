@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useCallback } from "react";
+import { useState, useMemo, memo, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PlayCircle, ArrowUpDown, Filter, Pencil, Check, X, Calendar } from "lucide-react";
 import { useApp } from "@/context/AppContext";
@@ -100,10 +100,7 @@ const OngoingCard = memo(function OngoingCard({
               />
             </div>
 
-            <div className="pt-1 space-y-1.5">
-              <div className="text-xs text-[#B3B3B3]">
-                Release Calendar: <span className="text-white">{ongoingData.releaseDates?.length || 0} episodes scheduled</span>
-              </div>
+            <div className="pt-1">
               <div className="space-y-1.5">
                 <span className="block text-xs text-[#B3B3B3]">Air Days:</span>
                 <AirDaySelector
@@ -212,8 +209,6 @@ export default function OngoingTab() {
   const [isEditingYear, setIsEditingYear] = useState(false);
   const [yearInput, setYearInput] = useState(state.ongoingYear.toString());
 
-  const todayName = new Date().toLocaleDateString("en-US", { weekday: "long" }) as AirDay;
-
   // Derive ongoing entries from entries with status ONGOING
   const ongoingEntries = useMemo(() => {
     let result = state.entries
@@ -254,7 +249,28 @@ export default function OngoingTab() {
     });
 
     return result;
-  }, [state.entries, getOngoingByEntryId, todayName, filter, sort]);
+  }, [state.entries, getOngoingByEntryId, filter, sort]);
+
+  // Keep watched progress linked to the latest episode released according to
+  // the calendar. Never move progress backwards if the user is ahead.
+  useEffect(() => {
+    state.ongoing.forEach((ongoingData) => {
+      const schedule = getOngoingSchedule(ongoingData);
+      if (
+        schedule.isConfigured &&
+        schedule.airedEpisode !== null &&
+        schedule.airedEpisode > ongoingData.currentEpisode
+      ) {
+        dispatch({
+          type: "UPDATE_ONGOING",
+          payload: {
+            ...ongoingData,
+            currentEpisode: schedule.airedEpisode,
+          },
+        });
+      }
+    });
+  }, [state.ongoing, dispatch]);
 
   // Planned entries for calendar (current/future year)
   const plannedEntries = useMemo(() => {

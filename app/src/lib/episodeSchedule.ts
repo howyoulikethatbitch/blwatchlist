@@ -45,7 +45,10 @@ function getCalendarSchedule(
   ongoing: Pick<OngoingEntry, 'totalEpisodes' | 'releaseDates'>,
   today: Date,
 ): OngoingSchedule {
-  const releaseDates = [...new Set(ongoing.releaseDates || [])]
+  // Keep duplicate dates: multiple episodes can release on the same day
+  // (for example, a two-episode premiere), and each date entry represents one
+  // episode in the release calendar.
+  const releaseDates = [...(ongoing.releaseDates || [])]
     .filter((value) => parseDateOnly(value) !== null)
     .sort();
   const todayKey = dateKey(today);

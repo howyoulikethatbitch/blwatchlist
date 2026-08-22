@@ -4,6 +4,7 @@ import { PlayCircle, ArrowUpDown, Filter, Pencil, Check, X, Calendar } from "luc
 import { useApp } from "@/context/AppContext";
 import Poster from "../Poster";
 import type { AirDay, Entry, OngoingEntry } from "@/types";
+import AirDaySelector from "../AirDaySelector";
 import { getOngoingSchedule } from "@/lib/episodeSchedule";
 import EntryModal from "../EntryModal";
 import CalendarSheet from "../CalendarSheet";
@@ -103,13 +104,13 @@ const OngoingCard = memo(function OngoingCard({
               <div className="text-xs text-[#B3B3B3]">
                 Release Calendar: <span className="text-white">{ongoingData.releaseDates?.length || 0} episodes scheduled</span>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-[#B3B3B3]">Air Days:</span>
-                {ongoingData.airDays.map((day) => (
-                  <span key={day} className="px-2 py-1 rounded-md bg-white/[0.06] text-[11px] text-[#B3B3B3]">
-                    {day.slice(0, 3)}
-                  </span>
-                ))}
+              <div className="space-y-1.5">
+                <span className="block text-xs text-[#B3B3B3]">Air Days:</span>
+                <AirDaySelector
+                  value={ongoingData.airDays}
+                  onChange={() => undefined}
+                  disabled
+                />
               </div>
             </div>
           </div>

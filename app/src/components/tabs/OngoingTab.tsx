@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { PlayCircle, ArrowUpDown, Filter, Pencil, Check, X, Calendar } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import Poster from "../Poster";
-import AirDaySelector from "../AirDaySelector";
 import type { AirDay, Entry, OngoingEntry } from "@/types";
 import { getOngoingSchedule } from "@/lib/episodeSchedule";
 import EntryModal from "../EntryModal";
@@ -15,7 +14,6 @@ const OngoingCard = memo(function OngoingCard({
   ongoingData,
   schedule,
   onEpisodeChange,
-  onAirDaysChange,
   onEntryClick,
   onFinishPrompt,
 }: {
@@ -23,8 +21,7 @@ const OngoingCard = memo(function OngoingCard({
   entry: { title: string; poster: string | null; country: string };
   ongoingData: OngoingEntry;
   schedule: ReturnType<typeof getOngoingSchedule>;
-  onEpisodeChange: (entryId: string, field: "currentEpisode" | "totalEpisodes", value: number) => void;
-  onAirDaysChange: (entryId: string, days: AirDay[]) => void;
+  onEpisodeChange: (entryId: string, field: "currentEpisode", value: number) => void;
   onEntryClick: (entry: Entry) => void;
   onFinishPrompt: (entryId: string, schedule: ReturnType<typeof getOngoingSchedule>, ongoingData: OngoingEntry) => boolean;
 }) {
@@ -73,7 +70,8 @@ const OngoingCard = memo(function OngoingCard({
               <input
                 type="number"
                 value={ongoingData.totalEpisodes}
-                onChange={(e) => onEpisodeChange(entryId, "totalEpisodes", parseInt(e.target.value) || 0)}
+                readOnly
+                disabled
                 className="w-10 h-7 bg-white/[0.06] border border-white/10 rounded text-center text-sm text-white focus:border-[#E50914] outline-none"
                 min={1}
               />
@@ -101,20 +99,19 @@ const OngoingCard = memo(function OngoingCard({
               />
             </div>
 
-            {ongoingData.trackingMode === 'calendar' ? (
-              <div className="pt-1 text-xs text-[#B3B3B3]">
+            <div className="pt-1 space-y-1.5">
+              <div className="text-xs text-[#B3B3B3]">
                 Release Calendar: <span className="text-white">{ongoingData.releaseDates?.length || 0} episodes scheduled</span>
               </div>
-            ) : (
-              /* Air Days */
-              <div className="pt-1">
-                <span className="text-xs text-[#B3B3B3] mr-2">Air Days:</span>
-                <AirDaySelector
-                  value={ongoingData.airDays}
-                  onChange={(days: AirDay[]) => onAirDaysChange(entryId, days)}
-                />
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-[#B3B3B3]">Air Days:</span>
+                {ongoingData.airDays.map((day) => (
+                  <span key={day} className="px-2 py-1 rounded-md bg-white/[0.06] text-[11px] text-[#B3B3B3]">
+                    {day.slice(0, 3)}
+                  </span>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -264,21 +261,12 @@ export default function OngoingTab() {
     return state.entries.filter((e) => e.status === "PLANNED" && e.year >= currentYear);
   }, [state.entries]);
 
-  const handleEpisodeChange = useCallback((entryId: string, field: "currentEpisode" | "totalEpisodes", value: number) => {
+  const handleEpisodeChange = useCallback((entryId: string, field: "currentEpisode", value: number) => {
     const existing = state.ongoing.find((o) => o.entryId === entryId);
     if (!existing) return;
     dispatch({
       type: "UPDATE_ONGOING",
       payload: { ...existing, [field]: Math.max(0, value) },
-    });
-  }, [state.ongoing, dispatch]);
-
-  const handleAirDaysChange = useCallback((entryId: string, days: AirDay[]) => {
-    const existing = state.ongoing.find((o) => o.entryId === entryId);
-    if (!existing) return;
-    dispatch({
-      type: "UPDATE_ONGOING",
-      payload: { ...existing, airDays: days },
     });
   }, [state.ongoing, dispatch]);
 
@@ -516,7 +504,6 @@ export default function OngoingTab() {
             ongoingData={ongoingData}
             schedule={schedule}
             onEpisodeChange={handleEpisodeChange}
-            onAirDaysChange={handleAirDaysChange}
             onEntryClick={setSelectedEntry}
             onFinishPrompt={handleFinishPrompt}
           />

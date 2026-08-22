@@ -7,6 +7,26 @@ import EntryModal from '../EntryModal';
 import type { Entry } from '@/types';
 import { getOngoingSchedule } from '@/lib/episodeSchedule';
 
+function dailySeed(day: string, salt = '') {
+  let seed = 0;
+  for (const character of `${day}:${salt}`) seed = (seed * 31 + character.charCodeAt(0)) >>> 0;
+  return seed;
+}
+
+function dailyShuffle<T>(values: T[], day: string, salt: string): T[] {
+  const result = [...values];
+  let seed = dailySeed(day, salt);
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 2 ** 32;
+  };
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 /* ============================================================
    Airing Today - 3D Coverflow Carousel
    ============================================================ */
@@ -320,33 +340,21 @@ function RewatchPicksSection({
   favorites: Entry[];
   onEntryClick: (entry: Entry) => void;
 }) {
+  const [today, setToday] = useState(() => new Date().toDateString());
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const nextDay = new Date().toDateString();
+      setToday((current) => current === nextDay ? current : nextDay);
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const picks = useMemo(() => {
-    // Get today's date string for consistent daily randomization
-    const today = new Date().toDateString();
-
-    // Simple seeded random from date string
-    let seed = 0;
-    for (let i = 0; i < today.length; i++) seed += today.charCodeAt(i);
-    const random = () => {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    };
-
-    // Shuffle arrays with seed
-    const shuffle = <T,>(arr: T[]) => {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    };
-
-    const shuffledFavs = shuffle(favorites);
+    const shuffledFavs = dailyShuffle(favorites, today, 'favorites');
     const nonFavEntries = entries.filter(e => !favorites.some(f => f.id === e.id));
-    const shuffledGeneral = shuffle(nonFavEntries);
+    const shuffledGeneral = dailyShuffle(nonFavEntries, today, 'general');
     const droppedEntries = entries.filter(e => e.status === 'DROPPED');
-    const shuffledDropped = shuffle(droppedEntries);
+    const shuffledDropped = dailyShuffle(droppedEntries, today, 'dropped');
 
     const selected: Entry[] = [];
 
@@ -372,14 +380,14 @@ function RewatchPicksSection({
 
     // If we don't have 5, fill with random entries
     if (selected.length < 5) {
-      const remaining = shuffle(entries).filter(e => !selected.some(s => s.id === e.id));
+      const remaining = dailyShuffle(entries, today, 'remaining').filter(e => !selected.some(s => s.id === e.id));
       while (selected.length < 5 && remaining.length > 0) {
         selected.push(remaining.shift()!);
       }
     }
 
-    return shuffle(selected);
-  }, [entries, favorites]);
+    return dailyShuffle(selected, today, 'final');
+  }, [entries, favorites, today]);
 
   if (picks.length === 0) return null;
 
@@ -429,9 +437,22 @@ const REWATCH_GROUPS = [
 ] as const;
 
 function CountryRewatchSections({ entries, onEntryClick }: { entries: Entry[]; onEntryClick: (entry: Entry) => void }) {
+  const [today, setToday] = useState(() => new Date().toDateString());
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const nextDay = new Date().toDateString();
+      setToday((current) => current === nextDay ? current : nextDay);
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const groups = REWATCH_GROUPS.map((group) => ({
     ...group,
-    entries: entries.filter((entry) => entry.status === 'COMPLETE' && entry.country === group.country).slice(0, 5),
+    entries: dailyShuffle(
+      entries.filter((entry) => entry.status === 'COMPLETE' && entry.country === group.country),
+      today,
+      group.country,
+    ).slice(0, 5),
   })).filter((group) => group.entries.length > 0);
 
   if (groups.length === 0) return null;
@@ -470,11 +491,12 @@ export default function OverviewTab() {
 
   const airingToday = useMemo(() => {
     return state.ongoing
-      .filter(o => o.airDays.includes(today as typeof o.airDays[number]))
+      .map(o => ({ ongoing: o, schedule: getOngoingSchedule(o) }))
+      .filter(({ schedule }) => schedule.isAiringToday)
       .map(o => {
-        const entry = state.entries.find(e => e.id === o.entryId);
+        const entry = state.entries.find(e => e.id === o.ongoing.entryId);
           return entry
-            ? { entry, ongoing: o, schedule: getOngoingSchedule(o) }
+            ? { entry, ongoing: o.ongoing, schedule: o.schedule }
             : null;
       })
        .filter(Boolean) as {

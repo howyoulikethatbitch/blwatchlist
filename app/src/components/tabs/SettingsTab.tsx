@@ -13,7 +13,7 @@ import {
   Trash2,
   Sparkles,
 } from 'lucide-react';
-import { useApp } from '@/context/AppContext';
+import { migrateOngoing, useApp } from '@/context/AppContext';
 import { useWrapped } from '@/context/WrappedContext';
 import { useAnnualWrapped } from '@/context/AnnualWrappedContext';
 import { saveToIndexedDB, clearIndexedDB } from '@/hooks/useIndexedDB';
@@ -193,9 +193,24 @@ export default function SettingsTab() {
 
       if (hasMetadata) {
         // Full backup format - restore everything
+        const validEntryIds = new Set(
+          processedEntries
+            .filter((entry) => entry.status === 'ONGOING')
+            .map((entry) => entry.id),
+        );
+        const importedOngoing = (Array.isArray(data.ongoing) ? data.ongoing : [])
+          .map((ongoing) =>
+            ongoing && typeof ongoing === 'object'
+              ? migrateOngoing(ongoing as Record<string, unknown>)
+              : null,
+          )
+          .filter((ongoing): ongoing is NonNullable<typeof ongoing> =>
+            ongoing !== null && validEntryIds.has(ongoing.entryId),
+          );
+
         newState = {
           entries: processedEntries as unknown as AppState['entries'],
-          ongoing: Array.isArray(data.ongoing) ? data.ongoing as AppState['ongoing'] : [],
+          ongoing: importedOngoing,
           favorites: Array.isArray(data.favorites) ? (data.favorites as Array<Record<string, unknown>>).map((f: Record<string, unknown>) => ({
             entryId: (f.entryId as string) || '',
             storyline: typeof f.storyline === 'number' ? f.storyline : 5,

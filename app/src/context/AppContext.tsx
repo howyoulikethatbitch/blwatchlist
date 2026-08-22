@@ -103,7 +103,7 @@ function migrateEntry(e: Record<string, unknown>): Entry {
   };
 }
 
-function migrateOngoing(o: Record<string, unknown>): OngoingEntry | null {
+export function migrateOngoing(o: Record<string, unknown>): OngoingEntry | null {
   if (typeof o.entryId !== 'string' || !o.entryId) return null;
 
   const airDays = Array.isArray(o.airDays)

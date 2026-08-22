@@ -114,7 +114,7 @@ const OngoingCard = memo(function OngoingCard({
           </div>
         </div>
 
-            {schedule.isFinalEpisodeAiringToday && (
+            {schedule.isFinalEpisodeAired && (
               <div className="text-xs">
                 {verificationError ? (
                   <p className="text-amber-300/90">
@@ -275,7 +275,7 @@ export default function OngoingTab() {
     const entry = state.entries.find((item) => item.id === entryId);
     const verificationPassed =
       !!entry &&
-      schedule.isFinalEpisodeAiringToday &&
+      schedule.isFinalEpisodeAired &&
       schedule.isConfigured &&
       schedule.airedEpisode === schedule.totalEpisodes &&
       ongoingData.currentEpisode === schedule.airedEpisode;

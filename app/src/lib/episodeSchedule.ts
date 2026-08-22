@@ -7,6 +7,8 @@ export interface OngoingSchedule {
   totalEpisodes: number;
   isAiringToday: boolean;
   isFinalEpisodeAiringToday: boolean;
+  /** Whether the final scheduled episode has aired, including previous days. */
+  isFinalEpisodeAired: boolean;
   isConfigured: boolean;
 }
 
@@ -79,6 +81,7 @@ function getCalendarSchedule(
       isAiringToday &&
       releasedBeforeToday < totalEpisodes &&
       releasedThroughToday >= totalEpisodes,
+    isFinalEpisodeAired: totalEpisodes > 0 && releasedThroughToday >= totalEpisodes,
     isConfigured: releaseDates.length > 0,
   };
 }
@@ -150,6 +153,7 @@ export function getOngoingSchedule(
       totalEpisodes: ongoing.totalEpisodes,
       isAiringToday,
       isFinalEpisodeAiringToday: false,
+      isFinalEpisodeAired: false,
       isConfigured: false,
     };
   }
@@ -184,6 +188,7 @@ export function getOngoingSchedule(
     airedEpisode,
     isAiringToday,
     isFinalEpisodeAiringToday,
+    isFinalEpisodeAired: releasedThroughToday >= ongoing.totalEpisodes,
     isConfigured: true,
   };
 }

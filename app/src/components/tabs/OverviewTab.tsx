@@ -240,7 +240,7 @@ function AiringTodayCarousel({
                           </p>
                           {item.schedule.isConfigured && (
                             <p className="text-white">
-                              Latest aired: Ep {item.schedule.airedEpisode} / {item.ongoing.totalEpisodes}
+                              Latest aired: Ep {item.schedule.airedEpisode} / {item.schedule.totalEpisodes}
                             </p>
                           )}
                         </div>

@@ -27,7 +27,8 @@ const OngoingCard = memo(function OngoingCard({
   onFinishPrompt: (entryId: string, schedule: ReturnType<typeof getOngoingSchedule>, ongoingData: OngoingEntry) => boolean;
 }) {
   const isAiringToday = schedule.isAiringToday;
-  const progress = ongoingData.totalEpisodes > 0 ? (ongoingData.currentEpisode / ongoingData.totalEpisodes) * 100 : 0;
+  const progressTotal = schedule.totalEpisodes || ongoingData.totalEpisodes;
+  const progress = progressTotal > 0 ? (ongoingData.currentEpisode / progressTotal) * 100 : 0;
   const [isAskingFinished, setIsAskingFinished] = useState(false);
   const [verificationError, setVerificationError] = useState(false);
 
@@ -70,7 +71,7 @@ const OngoingCard = memo(function OngoingCard({
               <span className="text-xs text-[#B3B3B3]">/</span>
               <input
                 type="number"
-                value={ongoingData.totalEpisodes}
+                value={progressTotal}
                 readOnly
                 disabled
                 className="w-10 h-7 bg-white/[0.06] border border-white/10 rounded text-center text-sm text-white focus:border-[#E50914] outline-none"
@@ -81,7 +82,7 @@ const OngoingCard = memo(function OngoingCard({
             {schedule.isConfigured ? (
               <p className="text-xs text-[#B3B3B3]">
                 Latest aired: <span className="text-white font-medium">
-                  Ep {schedule.airedEpisode} / {ongoingData.totalEpisodes}
+                  Ep {schedule.airedEpisode} / {progressTotal}
                 </span>
               </p>
             ) : (
@@ -276,7 +277,7 @@ export default function OngoingTab() {
       !!entry &&
       schedule.isFinalEpisodeAiringToday &&
       schedule.isConfigured &&
-      schedule.airedEpisode === ongoingData.totalEpisodes &&
+      schedule.airedEpisode === schedule.totalEpisodes &&
       ongoingData.currentEpisode === schedule.airedEpisode;
 
     if (verificationPassed && entry) {

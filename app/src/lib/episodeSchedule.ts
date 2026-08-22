@@ -3,6 +3,8 @@ import type { AirDay, OngoingEntry } from '@/types';
 export interface OngoingSchedule {
   /** The latest episode that should have been released by the current date. */
   airedEpisode: number | null;
+  /** Total episodes represented by the active schedule. */
+  totalEpisodes: number;
   isAiringToday: boolean;
   isFinalEpisodeAiringToday: boolean;
   isConfigured: boolean;
@@ -67,14 +69,16 @@ function getCalendarSchedule(
   ).length;
   const releasedBeforeToday = releaseDates.filter((value) => value < todayKey).length;
   const isAiringToday = releaseDates.includes(todayKey) && airingTimeReached;
+  const totalEpisodes = releaseDates.length;
 
   return {
-    airedEpisode: Math.min(ongoing.totalEpisodes, releasedThroughToday),
+    totalEpisodes,
+    airedEpisode: Math.min(totalEpisodes, releasedThroughToday),
     isAiringToday,
     isFinalEpisodeAiringToday:
       isAiringToday &&
-      releasedBeforeToday < ongoing.totalEpisodes &&
-      releasedThroughToday >= ongoing.totalEpisodes,
+      releasedBeforeToday < totalEpisodes &&
+      releasedThroughToday >= totalEpisodes,
     isConfigured: releaseDates.length > 0,
   };
 }
@@ -143,6 +147,7 @@ export function getOngoingSchedule(
   if (!firstAirDate || airDays.size === 0 || ongoing.totalEpisodes <= 0) {
     return {
       airedEpisode: null,
+      totalEpisodes: ongoing.totalEpisodes,
       isAiringToday,
       isFinalEpisodeAiringToday: false,
       isConfigured: false,
@@ -175,6 +180,7 @@ export function getOngoingSchedule(
     releasedThroughToday >= ongoing.totalEpisodes;
 
   return {
+    totalEpisodes: ongoing.totalEpisodes,
     airedEpisode,
     isAiringToday,
     isFinalEpisodeAiringToday,

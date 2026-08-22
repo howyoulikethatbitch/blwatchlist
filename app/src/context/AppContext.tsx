@@ -118,6 +118,9 @@ function migrateOngoing(o: Record<string, unknown>): OngoingEntry | null {
     ...(typeof o.firstAirDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.firstAirDate)
       ? { firstAirDate: o.firstAirDate }
       : {}),
+    ...(typeof o.airTime === 'string' && /^\d{2}:\d{2}$/.test(o.airTime)
+      ? { airTime: o.airTime }
+      : {}),
     premiereEpisodeCount: typeof o.premiereEpisodeCount === 'number'
       ? Math.max(1, Math.floor(o.premiereEpisodeCount))
       : 1,

@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useCallback, useEffect } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { PlayCircle, ArrowUpDown, Filter, Pencil, Check, X, Calendar } from "lucide-react";
 import { useApp } from "@/context/AppContext";
@@ -250,27 +250,6 @@ export default function OngoingTab() {
 
     return result;
   }, [state.entries, getOngoingByEntryId, filter, sort]);
-
-  // Keep watched progress linked to the latest episode released according to
-  // the calendar. Never move progress backwards if the user is ahead.
-  useEffect(() => {
-    state.ongoing.forEach((ongoingData) => {
-      const schedule = getOngoingSchedule(ongoingData);
-      if (
-        schedule.isConfigured &&
-        schedule.airedEpisode !== null &&
-        schedule.airedEpisode > ongoingData.currentEpisode
-      ) {
-        dispatch({
-          type: "UPDATE_ONGOING",
-          payload: {
-            ...ongoingData,
-            currentEpisode: schedule.airedEpisode,
-          },
-        });
-      }
-    });
-  }, [state.ongoing, dispatch]);
 
   // Planned entries for calendar (current/future year)
   const plannedEntries = useMemo(() => {

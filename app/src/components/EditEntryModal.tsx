@@ -42,6 +42,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
   const [status, setStatus] = useState<Status>('COMPLETE');
   const [posterData, setPosterData] = useState<string | null>(null);
   const [airDays, setAirDays] = useState<AirDay[]>([]);
+  const [airTime, setAirTime] = useState('00:00');
   const [currentEp, setCurrentEp] = useState(0);
   const [totalEp, setTotalEp] = useState(1);
   const [releaseDates, setReleaseDates] = useState<string[]>([]);
@@ -63,11 +64,13 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
       setPlannedDate(entry.plannedDate || '');
       if (ongoing) {
         setAirDays(ongoing.airDays as AirDay[]);
+        setAirTime(ongoing.airTime || '00:00');
         setCurrentEp(ongoing.currentEpisode);
         setTotalEp(ongoing.releaseDates?.length || 1);
         setReleaseDates(ongoing.releaseDates || []);
       } else {
         setAirDays([]);
+        setAirTime('00:00');
         setCurrentEp(0);
         setTotalEp(1);
         setReleaseDates([]);
@@ -81,6 +84,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
       setPosterData(null);
       setPlannedDate('');
       setAirDays([]);
+      setAirTime('00:00');
       setCurrentEp(0);
       setTotalEp(1);
       setReleaseDates([]);
@@ -144,6 +148,7 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
           currentEpisode: currentEp,
           totalEpisodes: totalEp,
             airDays: airDays.length > 0 ? airDays : ['Monday'] as AirDay[],
+            airTime,
             trackingMode: 'calendar',
             releaseDates,
         }
@@ -306,6 +311,16 @@ export default function EditEntryModal({ isOpen, onClose, onSave, entry }: EditE
                 <Label className="text-[#B3B3B3]">Air Days</Label>
                 <AirDaySelector value={airDays} onChange={setAirDays} />
                 <p className="text-[10px] text-[#666]">Set airing weekdays here. The Ongoing tab shows these days without editing.</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[#B3B3B3]">Airing Time</Label>
+                <Input
+                  type="time"
+                  value={airTime}
+                  onChange={e => setAirTime(e.target.value)}
+                  className="bg-white/[0.06] border-white/10 text-white [color-scheme:dark]"
+                />
+                <p className="text-[10px] text-[#666]">Latest aired and Final EP use this local time.</p>
               </div>
               <div className="space-y-2">
                   <button

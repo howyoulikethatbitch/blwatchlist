@@ -41,9 +41,18 @@ function dateKey(date: Date): string {
   ].join('-');
 }
 
+function hasReachedAirTime(now: Date, airTime = '00:00'): boolean {
+  const match = /^(\d{2}):(\d{2})$/.exec(airTime);
+  if (!match) return true;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return true;
+  return now.getHours() * 60 + now.getMinutes() >= hours * 60 + minutes;
+}
+
 function getCalendarSchedule(
-  ongoing: Pick<OngoingEntry, 'totalEpisodes' | 'releaseDates'>,
-  today: Date,
+  ongoing: Pick<OngoingEntry, 'totalEpisodes' | 'releaseDates' | 'airTime'>,
+  now: Date,
 ): OngoingSchedule {
   // Keep duplicate dates: multiple episodes can release on the same day
   // (for example, a two-episode premiere), and each date entry represents one
@@ -51,10 +60,13 @@ function getCalendarSchedule(
   const releaseDates = [...(ongoing.releaseDates || [])]
     .filter((value) => parseDateOnly(value) !== null)
     .sort();
-  const todayKey = dateKey(today);
-  const releasedThroughToday = releaseDates.filter((value) => value <= todayKey).length;
+  const todayKey = dateKey(now);
+  const airingTimeReached = hasReachedAirTime(now, ongoing.airTime);
+  const releasedThroughToday = releaseDates.filter(
+    (value) => value < todayKey || (value === todayKey && airingTimeReached),
+  ).length;
   const releasedBeforeToday = releaseDates.filter((value) => value < todayKey).length;
-  const isAiringToday = releaseDates.includes(todayKey);
+  const isAiringToday = releaseDates.includes(todayKey) && airingTimeReached;
 
   return {
     airedEpisode: Math.min(ongoing.totalEpisodes, releasedThroughToday),
@@ -100,6 +112,7 @@ export function getOngoingSchedule(
   ongoing: Pick<
     OngoingEntry,
     | 'firstAirDate'
+    | 'airTime'
     | 'airDays'
     | 'totalEpisodes'
     | 'premiereEpisodeCount'
@@ -116,7 +129,7 @@ export function getOngoingSchedule(
   );
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   if (ongoing.trackingMode === 'calendar') {
-    return getCalendarSchedule(ongoing, today);
+    return getCalendarSchedule(ongoing, now);
   }
 
   const isPremiereDay = firstAirDate
@@ -124,7 +137,8 @@ export function getOngoingSchedule(
     : false;
   const isAiringToday =
     (isPremiereDay || airDays.has(AIR_DAYS_BY_INDEX[today.getDay()])) &&
-    (!firstAirDate || today >= firstAirDate);
+    (!firstAirDate || today >= firstAirDate) &&
+    hasReachedAirTime(now, ongoing.airTime);
 
   if (!firstAirDate || airDays.size === 0 || ongoing.totalEpisodes <= 0) {
     return {
@@ -135,11 +149,16 @@ export function getOngoingSchedule(
     };
   }
 
-  const yesterday = new Date(today);
+  const scheduleThroughDate = new Date(today);
+  const isScheduledToday = isPremiereDay || airDays.has(AIR_DAYS_BY_INDEX[today.getDay()]);
+  if (isScheduledToday && !hasReachedAirTime(now, ongoing.airTime)) {
+    scheduleThroughDate.setDate(scheduleThroughDate.getDate() - 1);
+  }
+  const yesterday = new Date(scheduleThroughDate);
   yesterday.setDate(yesterday.getDate() - 1);
   const releasedThroughToday = countReleasedEpisodes(
     firstAirDate,
-    today,
+    scheduleThroughDate,
     airDays,
     premiereEpisodeCount,
   );

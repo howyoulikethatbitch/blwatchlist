@@ -39,7 +39,11 @@ const OngoingCard = memo(function OngoingCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={`p-3 rounded-xl bg-[#141414] relative overflow-hidden ${
-        isAiringToday ? "glow-border-red pulse-glow" : ""
+        schedule.isFinalEpisodeScheduledToday
+          ? "glow-border-amber pulse-glow-amber"
+          : isAiringToday
+            ? "glow-border-red pulse-glow"
+            : ""
       }`}
     >
       {showBadge && (

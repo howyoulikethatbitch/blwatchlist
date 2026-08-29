@@ -227,11 +227,11 @@ function AiringTodayCarousel({
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                            item.schedule.isFinalEpisodeAiringToday
+                            item.schedule.isFinalEpisodeScheduledToday
                               ? 'text-amber-300 bg-amber-500/20'
                               : 'text-[#E50914] bg-[#E50914]/20'
                           }`}>
-                            {item.schedule.isFinalEpisodeAiringToday ? 'Final EP' : 'Airing Today'}
+                            {item.schedule.isFinalEpisodeScheduledToday ? 'Final EP' : 'Airing Today'}
                           </span>
                         </div>
                         <div className="mt-1 space-y-0.5 text-[10px]">
@@ -486,13 +486,17 @@ function CountryRewatchSections({ entries, onEntryClick }: { entries: Entry[]; o
 export default function OverviewTab() {
   const { state } = useApp();
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
+  const [now, setNow] = useState(() => new Date());
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const airingToday = useMemo(() => {
     return state.ongoing
-      .map(o => ({ ongoing: o, schedule: getOngoingSchedule(o) }))
-      .filter(({ schedule }) => schedule.isAiringToday)
+      .map(o => ({ ongoing: o, schedule: getOngoingSchedule(o, now) }))
+      .filter(({ schedule }) => schedule.isAiringToday || schedule.isFinalEpisodeScheduledToday)
       .map(o => {
         const entry = state.entries.find(e => e.id === o.ongoing.entryId);
           return entry
@@ -504,7 +508,7 @@ export default function OverviewTab() {
          ongoing: typeof state.ongoing[number];
          schedule: ReturnType<typeof getOngoingSchedule>;
        }[];
-  }, [state, today]);
+  }, [state, now]);
 
   // Entries for Recently Added (General List only)
   const generalListEntries = useMemo(() => {

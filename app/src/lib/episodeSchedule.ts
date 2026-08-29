@@ -6,6 +6,8 @@ export interface OngoingSchedule {
   /** Total episodes represented by the active schedule. */
   totalEpisodes: number;
   isAiringToday: boolean;
+  /** Whether the final scheduled episode falls on the current local calendar day. */
+  isFinalEpisodeScheduledToday: boolean;
   isFinalEpisodeAiringToday: boolean;
   /** Whether the final scheduled episode has aired, including previous days. */
   isFinalEpisodeAired: boolean;
@@ -70,13 +72,18 @@ function getCalendarSchedule(
     (value) => value < todayKey || (value === todayKey && airingTimeReached),
   ).length;
   const releasedBeforeToday = releaseDates.filter((value) => value < todayKey).length;
-  const isAiringToday = releaseDates.includes(todayKey) && airingTimeReached;
+  const isScheduledToday = releaseDates.includes(todayKey);
+  const isAiringToday = isScheduledToday && airingTimeReached;
   const totalEpisodes = releaseDates.length;
 
   return {
     totalEpisodes,
     airedEpisode: Math.min(totalEpisodes, releasedThroughToday),
     isAiringToday,
+    isFinalEpisodeScheduledToday:
+      isScheduledToday &&
+      releasedBeforeToday < totalEpisodes &&
+      releaseDates.filter((value) => value <= todayKey).length >= totalEpisodes,
     isFinalEpisodeAiringToday:
       isAiringToday &&
       releasedBeforeToday < totalEpisodes &&
@@ -152,6 +159,7 @@ export function getOngoingSchedule(
       airedEpisode: null,
       totalEpisodes: ongoing.totalEpisodes,
       isAiringToday,
+      isFinalEpisodeScheduledToday: false,
       isFinalEpisodeAiringToday: false,
       isFinalEpisodeAired: false,
       isConfigured: false,
@@ -160,11 +168,11 @@ export function getOngoingSchedule(
 
   const scheduleThroughDate = new Date(today);
   const isScheduledToday = isPremiereDay || airDays.has(AIR_DAYS_BY_INDEX[today.getDay()]);
+  const dayBeforeToday = new Date(today);
+  dayBeforeToday.setDate(dayBeforeToday.getDate() - 1);
   if (isScheduledToday && !hasReachedAirTime(now, ongoing.airTime)) {
     scheduleThroughDate.setDate(scheduleThroughDate.getDate() - 1);
   }
-  const yesterday = new Date(scheduleThroughDate);
-  yesterday.setDate(yesterday.getDate() - 1);
   const releasedThroughToday = countReleasedEpisodes(
     firstAirDate,
     scheduleThroughDate,
@@ -173,7 +181,13 @@ export function getOngoingSchedule(
   );
   const releasedBeforeToday = countReleasedEpisodes(
     firstAirDate,
-    yesterday,
+    dayBeforeToday,
+    airDays,
+    premiereEpisodeCount,
+  );
+  const scheduledThroughToday = countReleasedEpisodes(
+    firstAirDate,
+    today,
     airDays,
     premiereEpisodeCount,
   );
@@ -187,6 +201,11 @@ export function getOngoingSchedule(
     totalEpisodes: ongoing.totalEpisodes,
     airedEpisode,
     isAiringToday,
+    isFinalEpisodeScheduledToday:
+      isScheduledToday &&
+      today >= firstAirDate &&
+      releasedBeforeToday < ongoing.totalEpisodes &&
+      scheduledThroughToday >= ongoing.totalEpisodes,
     isFinalEpisodeAiringToday,
     isFinalEpisodeAired: releasedThroughToday >= ongoing.totalEpisodes,
     isConfigured: true,

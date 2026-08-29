@@ -1,4 +1,4 @@
-import { useState, useMemo, memo, useCallback } from "react";
+import { useState, useMemo, memo, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { PlayCircle, ArrowUpDown, Filter, Pencil, Check, X, Calendar } from "lucide-react";
 import { useApp } from "@/context/AppContext";
@@ -27,6 +27,7 @@ const OngoingCard = memo(function OngoingCard({
   onFinishPrompt: (entryId: string, schedule: ReturnType<typeof getOngoingSchedule>, ongoingData: OngoingEntry) => boolean;
 }) {
   const isAiringToday = schedule.isAiringToday;
+  const showBadge = isAiringToday || schedule.isFinalEpisodeScheduledToday;
   const progressTotal = schedule.totalEpisodes || ongoingData.totalEpisodes;
   const progress = progressTotal > 0 ? (ongoingData.currentEpisode / progressTotal) * 100 : 0;
   const [isAskingFinished, setIsAskingFinished] = useState(false);
@@ -41,11 +42,11 @@ const OngoingCard = memo(function OngoingCard({
         isAiringToday ? "glow-border-red pulse-glow" : ""
       }`}
     >
-      {isAiringToday && (
+      {showBadge && (
         <span className={`absolute top-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 ${
-          schedule.isFinalEpisodeAiringToday ? "bg-amber-500" : "bg-[#E50914]"
+          schedule.isFinalEpisodeScheduledToday ? "bg-amber-500" : "bg-[#E50914]"
         }`}>
-          {schedule.isFinalEpisodeAiringToday ? "Final EP" : "Airing Today"}
+          {schedule.isFinalEpisodeScheduledToday ? "Final EP" : "Airing Today"}
         </span>
       )}
 
@@ -199,12 +200,18 @@ const matchesAirDay = (ongoing: OngoingEntry, day: AirDay): boolean => {
 
 export default function OngoingTab() {
   const { state, dispatch, getOngoingByEntryId, openCompletion } = useApp();
+  const [now, setNow] = useState(() => new Date());
   const [sort, setSort] = useState<SortType>("airDay");
   const [filter, setFilter] = useState<FilterType>("all");
   const [showSort, setShowSort] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   // Editable year state
   const [isEditingYear, setIsEditingYear] = useState(false);
@@ -219,7 +226,7 @@ export default function OngoingTab() {
         return {
           entry,
           ongoingData,
-          schedule: ongoingData ? getOngoingSchedule(ongoingData) : null,
+          schedule: ongoingData ? getOngoingSchedule(ongoingData, now) : null,
         };
       })
       .filter((item): item is { entry: Entry; ongoingData: NonNullable<typeof item.ongoingData>; schedule: ReturnType<typeof getOngoingSchedule> } =>
@@ -228,7 +235,9 @@ export default function OngoingTab() {
 
     // Apply filter
     if (filter === "today") {
-      result = result.filter(({ schedule }) => schedule.isAiringToday);
+      result = result.filter(({ schedule }) =>
+        schedule.isAiringToday || schedule.isFinalEpisodeScheduledToday
+      );
     } else if (filter !== "all") {
       result = result.filter(({ ongoingData }) => matchesAirDay(ongoingData, filter as AirDay));
     }
@@ -237,8 +246,8 @@ export default function OngoingTab() {
     result = [...result].sort((a, b) => {
       switch (sort) {
         case "airDay": {
-          const aHasToday = a.schedule.isAiringToday ? 0 : 1;
-          const bHasToday = b.schedule.isAiringToday ? 0 : 1;
+          const aHasToday = a.schedule.isAiringToday || a.schedule.isFinalEpisodeScheduledToday ? 0 : 1;
+          const bHasToday = b.schedule.isAiringToday || b.schedule.isFinalEpisodeScheduledToday ? 0 : 1;
           return aHasToday - bHasToday || a.entry.title.localeCompare(b.entry.title);
         }
         case "year": return b.entry.year - a.entry.year;
@@ -250,7 +259,7 @@ export default function OngoingTab() {
     });
 
     return result;
-  }, [state.entries, getOngoingByEntryId, filter, sort]);
+  }, [state.entries, getOngoingByEntryId, filter, sort, now]);
 
   // Planned entries for calendar (current/future year)
   const plannedEntries = useMemo(() => {
@@ -518,7 +527,7 @@ export default function OngoingTab() {
             return {
               entry,
               ongoingData,
-              schedule: ongoingData ? getOngoingSchedule(ongoingData) : null,
+              schedule: ongoingData ? getOngoingSchedule(ongoingData, now) : null,
             };
           })
           .filter((item): item is {

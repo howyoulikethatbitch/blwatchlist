@@ -115,8 +115,8 @@ const OngoingCard = memo(function OngoingCard({
           </div>
         </div>
 
-            {schedule.isFinalEpisodeAired && (
-              <div className="text-xs">
+          {schedule.isFinalEpisodeAired && (
+            <div className={`text-xs ${schedule.isFinalEpisodeScheduledToday ? "pt-6" : ""}`}>
                 {verificationError ? (
                   <p className="text-amber-300/90">
                     This series is currently airing. Please complete all available episodes.
@@ -154,8 +154,8 @@ const OngoingCard = memo(function OngoingCard({
                     Have you finished watching this title?
                   </button>
                 )}
-              </div>
-            )}
+            </div>
+          )}
       </div>
     </motion.div>
   );

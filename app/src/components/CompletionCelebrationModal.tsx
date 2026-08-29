@@ -6,6 +6,7 @@ import type { Entry } from '@/types';
 
 interface CompletionCelebrationModalProps {
   entry: Entry | null;
+  isFavorited: boolean;
   onClose: () => void;
   onRate: () => void;
   onFavorite: () => void;
@@ -14,6 +15,7 @@ interface CompletionCelebrationModalProps {
 
 export default function CompletionCelebrationModal({
   entry,
+  isFavorited,
   onClose,
   onRate,
   onFavorite,
@@ -60,9 +62,16 @@ export default function CompletionCelebrationModal({
               <button
                 type="button"
                 onClick={onFavorite}
-                className="flex items-center justify-center gap-2 rounded-xl py-3 bg-[#E50914]/15 text-[#ff6680] hover:bg-[#E50914]/25 text-sm font-semibold"
+                disabled={isFavorited}
+                aria-pressed={isFavorited}
+                className={`flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold ${
+                  isFavorited
+                    ? 'bg-[#E50914]/25 text-[#ff6680]'
+                    : 'bg-[#E50914]/15 text-[#ff6680] hover:bg-[#E50914]/25'
+                }`}
               >
-                <Heart className="w-4 h-4" /> Favorite
+                <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                {isFavorited ? 'Favorited' : 'Favorite'}
               </button>
               <button
                 type="button"

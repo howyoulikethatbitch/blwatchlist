@@ -173,6 +173,7 @@ function AppContent() {
 
       <CompletionCelebrationModal
         entry={currentCompletion}
+        isFavorited={currentCompletion ? isFavorited(currentCompletion.id) : false}
         onClose={dismissCompletion}
         onRate={() => {
           const entryId = currentCompletion?.id;
@@ -185,7 +186,6 @@ function AppContent() {
           if (entry && !isFavorited(entry.id)) {
             dispatch({ type: 'TOGGLE_FAVORITE', payload: entry.id });
           }
-          dismissCompletion();
         }}
         onTop10={() => {
           dismissCompletion();

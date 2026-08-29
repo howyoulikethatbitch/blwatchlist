@@ -203,7 +203,7 @@ const matchesAirDay = (ongoing: OngoingEntry, day: AirDay): boolean => {
 };
 
 export default function OngoingTab() {
-  const { state, dispatch, getOngoingByEntryId, openCompletion } = useApp();
+  const { state, dispatch, getOngoingByEntryId } = useApp();
   const [now, setNow] = useState(() => new Date());
   const [sort, setSort] = useState<SortType>("airDay");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -294,12 +294,15 @@ export default function OngoingTab() {
       ongoingData.currentEpisode === schedule.airedEpisode;
 
     if (verificationPassed && entry) {
-      openCompletion(entry);
+      dispatch({
+        type: "UPDATE_ENTRY",
+        payload: { ...entry, status: "COMPLETE" },
+      });
       return true;
     } else {
       return false;
     }
-  }, [state.entries, openCompletion]);
+  }, [state.entries, dispatch]);
 
   const handleYearSave = useCallback(() => {
     const year = parseInt(yearInput);

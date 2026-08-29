@@ -3,7 +3,7 @@ import type { FavoriteEntry } from '@/types';
 const MAIN_RATING_DEFAULT = 5;
 const MIN_RATING = 1;
 const MAX_RATING = 10;
-const EVALUATION_BONUS = 0.1;
+const EVALUATION_DEDUCTION = 0.1;
 
 type RatingFields = Pick<
   FavoriteEntry,
@@ -25,8 +25,8 @@ function clampRating(value: number): number {
   return Math.min(MAX_RATING, Math.max(MIN_RATING, Number.isFinite(value) ? value : MAIN_RATING_DEFAULT));
 }
 
-export function calculateEvaluationBonus(rating: Pick<FavoriteEntry, 'originality' | 'flowAndPacing' | 'characterDepth' | 'relationshipDynamics' | 'emotionalImpact' | 'ending' | 'rewatchValue'>): number {
-  const checkedCount = [
+export function calculateEvaluationDeduction(rating: Pick<FavoriteEntry, 'originality' | 'flowAndPacing' | 'characterDepth' | 'relationshipDynamics' | 'emotionalImpact' | 'ending' | 'rewatchValue'>): number {
+  const uncheckedCount = [
     rating.originality,
     rating.flowAndPacing,
     rating.characterDepth,
@@ -34,9 +34,9 @@ export function calculateEvaluationBonus(rating: Pick<FavoriteEntry, 'originalit
     rating.emotionalImpact,
     rating.ending,
     rating.rewatchValue,
-  ].filter(Boolean).length;
+  ].filter((checked) => !checked).length;
 
-  return Math.round(checkedCount * EVALUATION_BONUS * 100) / 100;
+  return Math.round(uncheckedCount * EVALUATION_DEDUCTION * 100) / 100;
 }
 
 export function calculateOverallRating(rating: RatingFields): number {
@@ -48,12 +48,12 @@ export function calculateOverallRating(rating: RatingFields): number {
     clampRating(rating.cinematography)
   ) / 5;
 
-  const totalBonus = calculateEvaluationBonus(rating);
-  return Math.min(Math.round((baseRating + totalBonus) * 100) / 100, MAX_RATING);
+  const totalDeduction = calculateEvaluationDeduction(rating);
+  return Math.min(Math.round((baseRating - totalDeduction) * 100) / 100, MAX_RATING);
 }
 
 export function formatRating(rating: number): string {
-  return (Number.isFinite(rating) ? rating : 0).toFixed(2);
+  return (Number.isFinite(rating) ? rating : 0).toFixed(2).replace(/\.?0+$/, '');
 }
 
 export function normalizeFavoriteEntry(raw: Record<string, unknown>): FavoriteEntry {
@@ -75,7 +75,7 @@ export function normalizeFavoriteEntry(raw: Record<string, unknown>): FavoriteEn
     overallRating: 0,
   };
 
-  normalized.gapPenalty = calculateEvaluationBonus(normalized);
+  normalized.gapPenalty = calculateEvaluationDeduction(normalized);
   normalized.overallRating = calculateOverallRating(normalized);
   return normalized;
 }

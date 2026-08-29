@@ -12,26 +12,13 @@ import type {
 import { saveToIndexedDB, loadFromIndexedDB } from '@/hooks/useIndexedDB';
 import type { Milestone, MilestoneType } from '@/components/MilestoneModal';
 import { trackWrappedEvent } from '@/lib/wrappedTracker';
+import { calculateEvaluationBonus, calculateOverallRating, normalizeFavoriteEntry } from '@/lib/rating';
 
 const AIR_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
 
 function getCurrentDay(): string {
   const day = new Date().toLocaleDateString('en-US', { weekday: 'long' });
   return AIR_DAYS.includes(day as typeof AIR_DAYS[number]) ? day : 'Monday';
-}
-
-function calculateBonusEvaluation(f: FavoriteEntry): number {
-  const checked = [
-    f.originality, f.flowAndPacing, f.characterDepth,
-    f.relationshipDynamics, f.emotionalImpact, f.ending, f.rewatchValue
-  ].filter(Boolean).length;
-  return Math.round(checked * 0.1 * 100) / 100;
-}
-
-function calculateOverallRating(f: FavoriteEntry): number {
-  const baseAvg = (f.storyline + f.acting + f.music + f.chemistry + f.cinematography) / 5;
-  const bonus = calculateBonusEvaluation(f);
-  return Math.min(Math.round((baseAvg + bonus) * 100) / 100, 10.00);
 }
 
 /* ============================================================
@@ -160,43 +147,11 @@ function validateData(data: unknown): AppState {
       const entry = migratedEntries.find((e: Entry) => e.id === f.entryId);
       return entry && entry.status !== 'DROPPED';
     })
-    .map((f) => ({
-      entryId: (f.entryId as string) || '',
-      storyline: typeof f.storyline === 'number' ? f.storyline : 5,
-      acting: typeof f.acting === 'number' ? f.acting : 5,
-      music: typeof f.music === 'number' ? f.music : 5,
-      chemistry: typeof f.chemistry === 'number' ? f.chemistry : 5,
-      cinematography: typeof f.cinematography === 'number' ? f.cinematography : 5,
-      originality: Boolean(f.originality),
-      flowAndPacing: Boolean(f.flowAndPacing),
-      characterDepth: Boolean(f.characterDepth),
-      relationshipDynamics: Boolean(f.relationshipDynamics),
-      emotionalImpact: Boolean(f.emotionalImpact),
-      ending: Boolean(f.ending),
-      rewatchValue: Boolean(f.rewatchValue),
-      gapPenalty: typeof f.gapPenalty === 'number' ? f.gapPenalty : 0,
-      overallRating: typeof f.overallRating === 'number' ? f.overallRating : 5.0,
-    })) as unknown as FavoriteEntry[];
+    .map((f) => normalizeFavoriteEntry(f));
 
   const validRatings = (ratings as unknown as Record<string, unknown>[])
     .filter((r) => migratedEntries.some((e: Entry) => e.id === r.entryId))
-    .map((r) => ({
-      entryId: (r.entryId as string) || '',
-      storyline: typeof r.storyline === 'number' ? r.storyline : 5,
-      acting: typeof r.acting === 'number' ? r.acting : 5,
-      music: typeof r.music === 'number' ? r.music : 5,
-      chemistry: typeof r.chemistry === 'number' ? r.chemistry : 5,
-      cinematography: typeof r.cinematography === 'number' ? r.cinematography : 5,
-      originality: Boolean(r.originality),
-      flowAndPacing: Boolean(r.flowAndPacing),
-      characterDepth: Boolean(r.characterDepth),
-      relationshipDynamics: Boolean(r.relationshipDynamics),
-      emotionalImpact: Boolean(r.emotionalImpact),
-      ending: Boolean(r.ending),
-      rewatchValue: Boolean(r.rewatchValue),
-      gapPenalty: typeof r.gapPenalty === 'number' ? r.gapPenalty : 0,
-      overallRating: typeof r.overallRating === 'number' ? r.overallRating : 5.0,
-    })) as unknown as FavoriteEntry[];
+    .map((r) => normalizeFavoriteEntry(r));
 
   // Clean up: remove top10 entries for dropped entries
   const validTop10Drawers = (top10Drawers as unknown as Record<string, unknown>[]).map((td) => ({
@@ -364,7 +319,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'UPDATE_FAVORITE': {
       const updated = {
         ...action.payload,
-        gapPenalty: calculateBonusEvaluation(action.payload),
+        gapPenalty: calculateEvaluationBonus(action.payload),
         overallRating: 0
       };
       updated.overallRating = calculateOverallRating(updated);
@@ -380,7 +335,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'UPDATE_RATING': {
       const updated = {
         ...action.payload,
-        gapPenalty: calculateBonusEvaluation(action.payload),
+        gapPenalty: calculateEvaluationBonus(action.payload),
         overallRating: 0
       };
       updated.overallRating = calculateOverallRating(updated);

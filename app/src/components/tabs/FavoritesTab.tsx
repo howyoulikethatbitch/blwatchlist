@@ -5,6 +5,7 @@ import { useApp } from "@/context/AppContext";
 import Poster from "../Poster";
 import RatingCircle from "../RatingCircle";
 import FavoriteEvaluation from "../FavoriteEvaluation";
+import { formatRating } from "@/lib/rating";
 type SortOption = "ratingDesc" | "ratingAsc" | "yearDesc" | "yearAsc" | "titleAZ" | "titleZA";
 type FilterOption = "all" | "movies" | "series";
 
@@ -205,7 +206,7 @@ export default function FavoritesTab() {
                   {/* Overall Rating */}
                   <span className="flex items-center gap-0.5 text-[10px] text-yellow-400 font-medium">
                     <span className="text-yellow-400">&#9733;</span>
-                    {fav.overallRating.toFixed(1)}
+                    {formatRating(fav.overallRating)}
                   </span>
                 </div>
               </div>

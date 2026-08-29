@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useApp } from '@/context/AppContext';
 import Poster from './Poster';
 import type { Entry } from '@/types';
+import { formatRating } from '@/lib/rating';
 
 interface EntryModalProps {
   isOpen: boolean;
@@ -69,7 +70,7 @@ export default function EntryModal({ isOpen, onClose, entry }: EntryModalProps) 
             >
               <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
               <span className="text-yellow-400 font-bold text-sm" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                 {rating.overallRating.toFixed(1)}
+                 {formatRating(rating.overallRating)}
               </span>
             </div>
           )}

@@ -202,7 +202,7 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
       const avg = allRated.reduce((s, r) => s + r.rating, 0) / allRated.length;
       slides.push(slide(
         'avg-rating',
-        { count: Math.round(avg * 10) / 10, label: 'avg rating this month' },
+        { count: Math.round(avg * 100) / 100, label: 'avg rating this month' },
         getNarratorComment('avgRating', month),
       ));
     }

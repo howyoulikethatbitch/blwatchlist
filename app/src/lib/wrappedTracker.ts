@@ -12,6 +12,7 @@ import {
 } from '@/lib/wrappedDB';
 import type { MonthlyActivityData, AnnualActivityData, AnnualTrackedEntry, AnnualRankingEntry } from '@/types/wrapped';
 import { getWatcherTitle } from '@/lib/wrappedEngine';
+import { calculateOverallRating } from '@/lib/rating';
 
 function entryToTracked(e: Entry, rating?: number) {
   return {
@@ -324,14 +325,7 @@ function processAction(
       const existingRating = activity.ratingByEntry[fav.entryId];
       const isEdit = !!existingRating;
 
-      // Compute the new overall rating inline (matches AppContext formula)
-      const baseAvg = (fav.storyline + fav.acting + fav.music + fav.chemistry + fav.cinematography) / 5;
-      const bonusCount = [
-        fav.originality, fav.flowAndPacing, fav.characterDepth,
-        fav.relationshipDynamics, fav.emotionalImpact, fav.ending, fav.rewatchValue,
-      ].filter(Boolean).length;
-      const bonus = Math.round(bonusCount * 0.1 * 100) / 100;
-      const newRating = Math.min(Math.round((baseAvg + bonus) * 100) / 100, 10.0);
+      const newRating = calculateOverallRating(fav);
 
       const newRatingByEntry = {
         ...activity.ratingByEntry,

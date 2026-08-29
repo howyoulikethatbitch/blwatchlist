@@ -4,6 +4,7 @@ import { Heart, Pencil, Trash2, Check, X } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useApp } from '@/context/AppContext';
 import type { FavoriteEntry } from '@/types';
+import { calculateOverallRating, formatRating } from '@/lib/rating';
 
 /* ============================================================
    Animated Counter Hook
@@ -142,7 +143,7 @@ function OverallRatingDisplay({ rating, isActive }: { rating: number; isActive: 
     <div className="flex flex-col items-center gap-2 py-3">
       {/* Large Number */}
       <span className="text-5xl font-black text-white tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
-        {animatedValue.toFixed(1)}
+        {formatRating(animatedValue)}
       </span>
       {/* 5 Stars with half-fill support */}
       <div className="flex items-center gap-1">
@@ -571,15 +572,20 @@ export default function FavoriteEvaluation({
   }, [isOpen, existingFavorite]);
 
   // Calculate overall rating using the exact formula
-  const overallRating = useMemo(() => {
-    const baseAvg = (storyline + acting + music + chemistry + cinematography) / 5;
-    const checkedCount = [
-      originality, flowAndPacing, characterDepth,
-      relationshipDynamics, emotionalImpact, ending, rewatchValue,
-    ].filter(Boolean).length;
-    const bonus = checkedCount * 0.10;
-    return Math.min(baseAvg + bonus, 10.00);
-  }, [storyline, acting, music, chemistry, cinematography, originality, flowAndPacing, characterDepth, relationshipDynamics, emotionalImpact, ending, rewatchValue]);
+  const overallRating = useMemo(() => calculateOverallRating({
+    storyline,
+    acting,
+    music,
+    chemistry,
+    cinematography,
+    originality,
+    flowAndPacing,
+    characterDepth,
+    relationshipDynamics,
+    emotionalImpact,
+    ending,
+    rewatchValue,
+  }), [storyline, acting, music, chemistry, cinematography, originality, flowAndPacing, characterDepth, relationshipDynamics, emotionalImpact, ending, rewatchValue]);
 
   const handleSave = useCallback(() => {
     if (!entryId) return;

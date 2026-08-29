@@ -279,7 +279,7 @@ export function buildAnnualSlides(snapshot: AnnualWrappedSnapshot): AnnualWrappe
     if (average > 0) {
       slides.push(slide(
         'ratings',
-        { count: Math.round(average * 10) / 10, label: 'your average rating this year' },
+        { count: Math.round(average * 100) / 100, label: 'your average rating this year' },
         'Every score helped shape the bigger picture of your year.',
       ));
     }

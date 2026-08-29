@@ -19,6 +19,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import type { Entry } from '@/types';
 import ShareButton from '../ShareCard';
+import { formatRating } from '@/lib/rating';
 
 /* ============================================================
    Full-Screen Modal Component
@@ -204,8 +205,8 @@ function OverviewStatsGrid() {
     const favorites = state.favorites.length;
     const top10 = state.top10Drawers.reduce((acc, d) => acc + d.entries.length, 0);
     const avgRating = state.favorites.length > 0
-      ? (state.favorites.reduce((s, f) => s + f.overallRating, 0) / state.favorites.length).toFixed(1)
-      : '0.0';
+       ? formatRating(state.favorites.reduce((s, f) => s + f.overallRating, 0) / state.favorites.length)
+       : '0.00';
 
     return [
       { label: 'TOTAL ENTRIES', value: total.toString(), icon: Tv, color: 'text-white', iconColor: 'text-white' },
@@ -309,7 +310,7 @@ function HighestRatedModal() {
           {/* Rating */}
           <div className="flex items-center gap-1 flex-shrink-0">
             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span className="text-yellow-400 font-bold text-sm">{rating.toFixed(1)}</span>
+             <span className="text-yellow-400 font-bold text-sm">{formatRating(rating)}</span>
           </div>
         </div>
       ))}
@@ -417,8 +418,8 @@ export default function StatisticsTab({ onViewProfile }: { onViewProfile?: () =>
     const completed = state.entries.filter(e => e.status === 'COMPLETE').length;
     const favorites = state.favorites.length;
     const avgRating = state.favorites.length > 0
-      ? (state.favorites.reduce((s, f) => s + f.overallRating, 0) / state.favorites.length).toFixed(1)
-      : '0.0';
+       ? formatRating(state.favorites.reduce((s, f) => s + f.overallRating, 0) / state.favorites.length)
+       : '0.00';
 
     // Top country
     const countryMap = new Map<string, number>();

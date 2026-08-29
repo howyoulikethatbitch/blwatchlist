@@ -26,6 +26,7 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { normalizeFavoriteEntry } from '@/lib/rating';
 
 const APP_VERSION = '1.3.8';
 
@@ -211,26 +212,14 @@ export default function SettingsTab() {
         newState = {
           entries: processedEntries as unknown as AppState['entries'],
           ongoing: importedOngoing,
-          favorites: Array.isArray(data.favorites) ? (data.favorites as Array<Record<string, unknown>>).map((f: Record<string, unknown>) => ({
-            entryId: (f.entryId as string) || '',
-            storyline: typeof f.storyline === 'number' ? f.storyline : 5,
-            acting: typeof f.acting === 'number' ? f.acting : 5,
-            music: typeof f.music === 'number' ? f.music : 5,
-            chemistry: typeof f.chemistry === 'number' ? f.chemistry : 5,
-            cinematography: typeof f.cinematography === 'number' ? f.cinematography : 5,
-            originality: Boolean(f.originality),
-            flowAndPacing: Boolean(f.flowAndPacing),
-            characterDepth: Boolean(f.characterDepth),
-            relationshipDynamics: Boolean(f.relationshipDynamics),
-            emotionalImpact: Boolean(f.emotionalImpact),
-            ending: Boolean(f.ending),
-            rewatchValue: Boolean(f.rewatchValue),
-            gapPenalty: typeof f.gapPenalty === 'number' ? f.gapPenalty : 0.7,
-            overallRating: typeof f.overallRating === 'number' ? f.overallRating : 4.3,
-          })) as AppState['favorites'] : [],
+          favorites: Array.isArray(data.favorites)
+            ? (data.favorites as Array<Record<string, unknown>>).map(normalizeFavoriteEntry)
+            : [],
           ratings: Array.isArray(data.ratings)
-            ? data.ratings as AppState['ratings']
-            : (Array.isArray(data.favorites) ? data.favorites as AppState['ratings'] : []),
+            ? (data.ratings as Array<Record<string, unknown>>).map(normalizeFavoriteEntry)
+            : (Array.isArray(data.favorites)
+              ? (data.favorites as Array<Record<string, unknown>>).map(normalizeFavoriteEntry)
+              : []),
           top10Drawers: Array.isArray(data.top10Drawers) ? (data.top10Drawers as Array<Record<string, unknown>>).map((td: Record<string, unknown>) => ({
             year: typeof td.year === 'number' ? td.year : new Date().getFullYear(),
             entries: Array.isArray(td.entries) ? (td.entries as Array<Record<string, unknown>>).map((e: Record<string, unknown>) => ({

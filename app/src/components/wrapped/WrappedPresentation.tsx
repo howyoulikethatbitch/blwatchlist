@@ -9,6 +9,7 @@ import { useWrapped } from '@/context/WrappedContext';
 import type { MonthlyWrappedSnapshot, WrappedSlide } from '@/types/wrapped';
 import { buildSlides } from '@/lib/wrappedEngine';
 import { monthKeyToLabel } from '@/lib/wrappedDB';
+import { formatRating } from '@/lib/rating';
 
 // ── Gradient palette per slide type ──────────────────────────────────────────
 const SLIDE_GRADIENTS: Record<string, string> = {
@@ -156,7 +157,7 @@ function HighlightSlide({ slide, accent }: { slide: WrappedSlide; accent: string
         className="font-black text-7xl"
         style={{ color: accent }}
       >
-        {p.rating.toFixed(1)}
+        {formatRating(p.rating)}
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}

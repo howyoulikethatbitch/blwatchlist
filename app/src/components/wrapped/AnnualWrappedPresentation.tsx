@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Crown, X } from 'lucide-react';
 import { useAnnualWrapped } from '@/context/AnnualWrappedContext';
 import { buildAnnualSlides } from '@/lib/annualWrappedEngine';
 import type { AnnualWrappedSlide, AnnualWrappedSnapshot } from '@/types/wrapped';
+import { formatRating } from '@/lib/rating';
 
 const gradients: Record<string, string> = {
   intro: 'from-[#130507] via-[#2a0713] to-[#080808]',
@@ -121,7 +122,7 @@ function Highlight({ slide, accent }: { slide: AnnualWrappedSlide; accent: strin
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/50">Your highest-rated BL</p>
       <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-8xl font-black" style={{ color: accent }}>
-        {payload.rating.toFixed(1)}
+        {formatRating(payload.rating)}
       </motion.p>
       <p className="max-w-xs text-2xl font-bold text-white">{payload.title}</p>
       <p className="text-sm text-white/45">{payload.country} · {payload.type}</p>

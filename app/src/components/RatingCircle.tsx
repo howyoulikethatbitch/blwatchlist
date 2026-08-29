@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatRating } from '@/lib/rating';
 
 interface RatingCircleProps {
   rating: number;
@@ -21,7 +22,7 @@ const RatingCircle: React.FC<RatingCircleProps> = ({ rating, size = 32 }) => {
         />
       </svg>
       <span className="absolute text-[10px] font-bold" style={{ color }}>
-        {rating.toFixed(1)}
+        {formatRating(rating)}
       </span>
     </div>
   );

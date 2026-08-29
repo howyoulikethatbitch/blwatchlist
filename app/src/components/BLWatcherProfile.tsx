@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import type { WatcherTitle, Achievement } from '@/types';
+import { formatRating } from '@/lib/rating';
 
 /* ============================================================
    Title Progression Data
@@ -369,8 +370,8 @@ export default function BLWatcherProfile({ onBack }: { onBack: () => void }) {
     const favorites = state.favorites.length;
     const top10 = state.top10Drawers.length;
     const avgRating = state.favorites.length > 0
-      ? (state.favorites.reduce((s, f) => s + f.overallRating, 0) / state.favorites.length).toFixed(1)
-      : '0.0';
+       ? formatRating(state.favorites.reduce((s, f) => s + f.overallRating, 0) / state.favorites.length)
+       : '0.00';
 
     // Countries breakdown
     const countryMap = new Map<string, number>();
@@ -1019,7 +1020,7 @@ export default function BLWatcherProfile({ onBack }: { onBack: () => void }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-white text-xs font-semibold">
-                    {personalRecords.highestSeries ? `${personalRecords.highestSeries.title} (${personalRecords.highestSeries.rating.toFixed(1)})` : '—'}
+                    {personalRecords.highestSeries ? `${personalRecords.highestSeries.title} (${formatRating(personalRecords.highestSeries.rating)})` : '—'}
                   </span>
                   {personalRecords.highestSeriesTied.length > 1 && (
                     <button
@@ -1038,7 +1039,7 @@ export default function BLWatcherProfile({ onBack }: { onBack: () => void }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-white text-xs font-semibold">
-                    {personalRecords.highestMovie ? `${personalRecords.highestMovie.title} (${personalRecords.highestMovie.rating.toFixed(1)})` : '—'}
+                    {personalRecords.highestMovie ? `${personalRecords.highestMovie.title} (${formatRating(personalRecords.highestMovie.rating)})` : '—'}
                   </span>
                   {personalRecords.highestMovieTied.length > 1 && (
                     <button
@@ -1122,7 +1123,7 @@ export default function BLWatcherProfile({ onBack }: { onBack: () => void }) {
               icon={Tv}
               items={personalRecords.highestSeriesTied.map(s => ({
                 title: s.title,
-                subtitle: `Rating: ${s.rating.toFixed(1)}`,
+                subtitle: `Rating: ${formatRating(s.rating)}`,
                 poster: state.entries.find(e => e.id === s.entryId)?.poster || null
               }))}
               onClose={() => setActiveRecordModal(null)}
@@ -1134,7 +1135,7 @@ export default function BLWatcherProfile({ onBack }: { onBack: () => void }) {
               icon={Film}
               items={personalRecords.highestMovieTied.map(m => ({
                 title: m.title,
-                subtitle: `Rating: ${m.rating.toFixed(1)}`,
+                subtitle: `Rating: ${formatRating(m.rating)}`,
                 poster: state.entries.find(e => e.id === m.entryId)?.poster || null
               }))}
               onClose={() => setActiveRecordModal(null)}

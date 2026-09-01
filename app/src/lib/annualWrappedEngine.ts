@@ -243,35 +243,45 @@ export function buildAnnualSlides(snapshot: AnnualWrappedSnapshot): AnnualWrappe
   if (completed.length > 0) {
     slides.push(slide(
       'completed',
-      { count: completed.length, label: completed.length === 1 ? 'BL completed' : 'BLs completed', titles: completed.slice(0, 5).map(e => e.title) },
+      {
+        count: completed.length,
+        label: completed.length === 1 ? 'BL completed' : 'BLs completed',
+        titles: completed.slice(0, 5).map(e => e.title),
+        entries: completed.slice(0, 4),
+      },
       getAnnualNarratorComment('completed', year),
     ));
   }
   if (d.favoritesAdded.length > 0) {
     slides.push(slide(
       'favorites',
-      { count: d.favoritesAdded.length, label: d.favoritesAdded.length === 1 ? 'new favorite' : 'new favorites', titles: d.favoritesAdded.slice(0, 5).map(e => e.title) },
+      {
+        count: d.favoritesAdded.length,
+        label: d.favoritesAdded.length === 1 ? 'new favorite' : 'new favorites',
+        titles: d.favoritesAdded.slice(0, 5).map(e => e.title),
+        entries: d.favoritesAdded.slice(0, 4),
+      },
       getAnnualNarratorComment('favorites', year),
     ));
   }
   if (d.plannedTitles.length > 0) {
     slides.push(slide(
       'activity',
-      { count: d.plannedTitles.length, label: d.plannedTitles.length === 1 ? 'BL added to your plan' : 'BLs added to your plan' },
+      { count: d.plannedTitles.length, label: d.plannedTitles.length === 1 ? 'BL added to your plan' : 'BLs added to your plan', entries: d.plannedTitles.slice(0, 4) },
       'Your next chapters were already lining up.',
     ));
   }
   if (d.droppedTitles.length > 0) {
     slides.push(slide(
       'activity',
-      { count: d.droppedTitles.length, label: d.droppedTitles.length === 1 ? 'story left unfinished' : 'stories left unfinished' },
+      { count: d.droppedTitles.length, label: d.droppedTitles.length === 1 ? 'story left unfinished' : 'stories left unfinished', entries: d.droppedTitles.slice(0, 4) },
       'Not every story made it to the finale — and that is okay.',
     ));
   }
   if (d.ratingsGiven > 0) {
     slides.push(slide(
       'ratings',
-      { count: d.ratingsGiven, label: d.ratingsGiven === 1 ? 'rating given' : 'ratings given' },
+      { count: d.ratingsGiven, label: d.ratingsGiven === 1 ? 'rating given' : 'ratings given', entries: allRated.slice(0, 4) },
     ));
     const average = d.ratingValues.length > 0
       ? d.ratingValues.reduce((sum, rating) => sum + rating, 0) / d.ratingValues.length
@@ -287,21 +297,33 @@ export function buildAnnualSlides(snapshot: AnnualWrappedSnapshot): AnnualWrappe
   if (highest && highest.rating > 0) {
     slides.push(slide(
       'highest-rated',
-      { title: highest.title, country: highest.country, type: highest.type, rating: highest.rating },
+      { title: highest.title, country: highest.country, type: highest.type, rating: highest.rating, poster: highest.poster },
       'This one clearly left a mark.',
     ));
   }
   if (countries.length > 0) {
     slides.push(slide(
       'countries',
-      { name: countries[0][0], count: countries[0][1], all: countries.slice(0, 5) },
+      {
+        name: countries[0][0],
+        count: countries[0][1],
+        all: countries.slice(0, 5),
+        entries: completed.filter(entry => entry.country === countries[0][0]).slice(0, 4),
+      },
       getAnnualNarratorComment('countries', year),
     ));
   }
   if (genres.length > 0) {
     slides.push(slide(
       'genres',
-      { name: genres[0][0], count: genres[0][1], all: genres.slice(0, 5) },
+      {
+        name: genres[0][0],
+        count: genres[0][1],
+        all: genres.slice(0, 5),
+        entries: completed
+          .filter(entry => entry.genres?.includes(genres[0][0]))
+          .slice(0, 4),
+      },
       getAnnualNarratorComment('genres', year),
     ));
   }
@@ -309,7 +331,11 @@ export function buildAnnualSlides(snapshot: AnnualWrappedSnapshot): AnnualWrappe
   if (ongoingCount > 0) {
     slides.push(slide(
       'ongoing',
-      { count: ongoingCount, label: ongoingCount === 1 ? 'ongoing BL followed' : 'ongoing BLs followed' },
+      {
+        count: ongoingCount,
+        label: ongoingCount === 1 ? 'ongoing BL followed' : 'ongoing BLs followed',
+        entries: [...d.ongoingStarted, ...d.ongoingContinued].slice(0, 4),
+      },
       getAnnualNarratorComment('ongoing', year),
     ));
   }

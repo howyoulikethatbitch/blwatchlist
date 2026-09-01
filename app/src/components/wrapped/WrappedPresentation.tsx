@@ -10,6 +10,7 @@ import type { MonthlyWrappedSnapshot, WrappedSlide } from '@/types/wrapped';
 import { buildSlides } from '@/lib/wrappedEngine';
 import { monthKeyToLabel } from '@/lib/wrappedDB';
 import { formatRating } from '@/lib/rating';
+import { WrappedPosterStack } from './WrappedPosterStack';
 
 // ── Gradient palette per slide type ──────────────────────────────────────────
 const SLIDE_GRADIENTS: Record<string, string> = {
@@ -91,9 +92,10 @@ function IntroSlide({ slide, accent }: { slide: WrappedSlide; accent: string }) 
 }
 
 function StatSlide({ slide, accent }: { slide: WrappedSlide; accent: string }) {
-  const p = slide.payload as { count: number; label: string; titles?: string[] };
+  const p = slide.payload as { count: number; label: string; titles?: string[]; entries?: Parameters<typeof WrappedPosterStack>[0]['entries'] };
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-5">
+      {p.entries && <WrappedPosterStack entries={p.entries} accent={accent} />}
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -139,9 +141,10 @@ function StatSlide({ slide, accent }: { slide: WrappedSlide; accent: string }) {
 }
 
 function HighlightSlide({ slide, accent }: { slide: WrappedSlide; accent: string }) {
-  const p = slide.payload as { title: string; country: string; type: string; rating: number };
+  const p = slide.payload as { title: string; country: string; type: string; rating: number; poster?: string | null };
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-4">
+      <WrappedPosterStack entries={[{ id: p.title, title: p.title, country: p.country, type: p.type as 'Movie' | 'Series', poster: p.poster }]} accent={accent} maxEntries={1} />
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -183,10 +186,11 @@ function HighlightSlide({ slide, accent }: { slide: WrappedSlide; accent: string
 }
 
 function CountrySlide({ slide, accent }: { slide: WrappedSlide; accent: string }) {
-  const p = slide.payload as { country: string; count: number; allCountries: [string, number][] };
+  const p = slide.payload as { country: string; count: number; allCountries: [string, number][]; entries?: Parameters<typeof WrappedPosterStack>[0]['entries'] };
   const total = p.allCountries.reduce((s, [, n]) => s + n, 0);
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-4">
+      {p.entries && <WrappedPosterStack entries={p.entries} accent={accent} />}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}

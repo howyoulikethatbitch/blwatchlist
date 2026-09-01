@@ -5,6 +5,7 @@ import { useAnnualWrapped } from '@/context/AnnualWrappedContext';
 import { buildAnnualSlides } from '@/lib/annualWrappedEngine';
 import type { AnnualWrappedSlide, AnnualWrappedSnapshot } from '@/types/wrapped';
 import { formatRating } from '@/lib/rating';
+import { WrappedPosterStack } from './WrappedPosterStack';
 
 const gradients: Record<string, string> = {
   intro: 'from-[#130507] via-[#2a0713] to-[#080808]',
@@ -81,9 +82,10 @@ function Intro({ slide, accent }: { slide: AnnualWrappedSlide; accent: string })
 }
 
 function Stat({ slide, accent }: { slide: AnnualWrappedSlide; accent: string }) {
-  const payload = slide.payload as { count: number; label: string; titles?: string[] };
+  const payload = slide.payload as { count: number; label: string; titles?: string[]; entries?: Parameters<typeof WrappedPosterStack>[0]['entries'] };
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
+      {payload.entries && <WrappedPosterStack entries={payload.entries} accent={accent} />}
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -117,9 +119,10 @@ function Stat({ slide, accent }: { slide: AnnualWrappedSlide; accent: string }) 
 }
 
 function Highlight({ slide, accent }: { slide: AnnualWrappedSlide; accent: string }) {
-  const payload = slide.payload as { title: string; country: string; type: string; rating: number };
+  const payload = slide.payload as { title: string; country: string; type: string; rating: number; poster?: string | null };
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
+      <WrappedPosterStack entries={[{ id: payload.title, title: payload.title, country: payload.country, type: payload.type as 'Movie' | 'Series', poster: payload.poster }]} accent={accent} maxEntries={1} />
       <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/50">Your highest-rated BL</p>
       <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-8xl font-black" style={{ color: accent }}>
         {formatRating(payload.rating)}
@@ -132,10 +135,11 @@ function Highlight({ slide, accent }: { slide: AnnualWrappedSlide; accent: strin
 }
 
 function Distribution({ slide, accent, kind }: { slide: AnnualWrappedSlide; accent: string; kind: 'country' | 'genre' }) {
-  const payload = slide.payload as { name: string; count: number; all: [string, number][] };
+  const payload = slide.payload as { name: string; count: number; all: [string, number][]; entries?: Parameters<typeof WrappedPosterStack>[0]['entries'] };
   const total = payload.all.reduce((sum, [, count]) => sum + count, 0);
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
+      {payload.entries && <WrappedPosterStack entries={payload.entries} accent={accent} />}
       <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/50">
         {kind === 'country' ? 'Your BL passport' : 'Your favorite genre'}
       </p>
@@ -164,11 +168,12 @@ function Distribution({ slide, accent, kind }: { slide: AnnualWrappedSlide; acce
 }
 
 function TopTen({ slide, accent }: { slide: AnnualWrappedSlide; accent: string }) {
-  const payload = slide.payload as { entries: Array<{ title: string; rank: number; country: string }>; drawerYear: number };
+  const payload = slide.payload as { entries: Array<{ id: string; title: string; rank: number; country: string; type: 'Movie' | 'Series'; poster?: string | null }>; drawerYear: number };
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <Crown className="h-12 w-12" style={{ color: accent }} />
       <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/50">Your {payload.drawerYear} Top 10</p>
+      <WrappedPosterStack entries={payload.entries} accent={accent} />
       <div className="flex w-full max-w-sm flex-col gap-1.5">
         {payload.entries.slice(0, 10).map((entry, index) => (
           <motion.div

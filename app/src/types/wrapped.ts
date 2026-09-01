@@ -10,7 +10,13 @@ export interface TrackedEntry {
   title: string;
   country: string;
   type: 'Movie' | 'Series';
+  /** Optional for backwards compatibility with snapshots created before posters were tracked. */
+  poster?: string | null;
   rating?: number;
+}
+
+export interface RatedTrackedEntry extends TrackedEntry {
+  rating: number;
 }
 
 export interface MonthlyActivityData {
@@ -38,7 +44,7 @@ export interface MonthlyActivityData {
   ratingValues:  number[];           // for computing avg / highest / lowest
 
   // Per-entry latest rating this month (to find highest/lowest)
-  ratingByEntry: Record<string, { title: string; rating: number; country: string; type: string }>;
+  ratingByEntry: Record<string, RatedTrackedEntry>;
 
   // Top 10
   top10Updates: number;
@@ -141,9 +147,14 @@ export type SlidePayload =
   | QuietPayload;
 
 export interface IntroPayload   { month: string; year: number; monthName: string }
-export interface StatPayload    { count: number; label: string; titles?: string[] }
-export interface HighlightPayload { title: string; country: string; type: string; rating: number }
-export interface CountryPayload { country: string; count: number; allCountries: [string, number][] }
+export interface StatPayload    { count: number; label: string; titles?: string[]; entries?: TrackedEntry[] }
+export interface HighlightPayload { title: string; country: string; type: string; rating: number; poster?: string | null }
+export interface CountryPayload {
+  country: string;
+  count: number;
+  allCountries: [string, number][];
+  entries?: TrackedEntry[];
+}
 export interface AchievementPayload { achievements: Array<{ title: string; type: string }> }
 export interface RankPayload    { rank: string; emoji: string; isNew: boolean }
 export interface EndingPayload  { monthName: string; year: number; totalCompleted: number }
@@ -271,9 +282,9 @@ export interface AnnualWrappedSlide {
 
 export type AnnualSlidePayload =
   | { year: number; totalActivity: number }
-  | { count: number; label: string; titles?: string[] }
-  | { title: string; country: string; type: string; rating: number }
-  | { name: string; count: number; all: [string, number][] }
+  | { count: number; label: string; titles?: string[]; entries?: AnnualTrackedEntry[] }
+  | { title: string; country: string; type: string; rating: number; poster?: string | null }
+  | { name: string; count: number; all: [string, number][]; entries?: AnnualTrackedEntry[] }
   | { countryCount: number; topCountry?: string; topCountryCount?: number }
   | { genreCount: number; topGenre?: string; topGenreCount?: number }
   | { achievements: Array<{ title: string; type: string }> }

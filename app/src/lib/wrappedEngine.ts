@@ -81,6 +81,7 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
   const month = snapshot.month;
   const monthName = monthKeyToMonthName(month);
   const year = snapshot.year;
+  const allRated = Object.values(d.ratingByEntry);
 
   // ── Quiet month ───────────────────────────────────────────────────────────
   const isQuiet =
@@ -116,6 +117,7 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
         count: allCompleted.length,
         label: allCompleted.length === 1 ? 'BL completed' : 'BLs completed',
         titles: allCompleted.slice(0, 5).map(t => t.title),
+        entries: allCompleted.slice(0, 4),
       },
       getNarratorComment('completed', month),
     ));
@@ -129,6 +131,7 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
         count: d.ongoingStarted.length,
         label: d.ongoingStarted.length === 1 ? 'new BL started' : 'new BLs started',
         titles: d.ongoingStarted.slice(0, 4).map(t => t.title),
+        entries: d.ongoingStarted.slice(0, 4),
       },
       getNarratorComment('ongoing', month),
     ));
@@ -142,6 +145,7 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
         count: d.plannedTitles.length,
         label: d.plannedTitles.length === 1 ? 'BL added to plan' : 'BLs added to plan',
         titles: d.plannedTitles.slice(0, 4).map(t => t.title),
+        entries: d.plannedTitles.slice(0, 4),
       },
       getNarratorComment('planned', month),
     ));
@@ -155,6 +159,7 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
         count: d.droppedTitles.length,
         label: d.droppedTitles.length === 1 ? 'BL dropped' : 'BLs dropped',
         titles: d.droppedTitles.slice(0, 3).map(t => t.title),
+        entries: d.droppedTitles.slice(0, 4),
       },
       getNarratorComment('dropped', month),
     ));
@@ -168,6 +173,7 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
         count: d.favoritesAdded.length,
         label: d.favoritesAdded.length === 1 ? 'favorite added' : 'favorites added',
         titles: d.favoritesAdded.slice(0, 4).map(t => t.title),
+        entries: d.favoritesAdded.slice(0, 4),
       },
       getNarratorComment('favorites', month),
     ));
@@ -180,19 +186,19 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
       {
         count: d.ratingsGiven,
         label: d.ratingsGiven === 1 ? 'rating given' : 'ratings given',
+        entries: allRated.slice(0, 4),
       },
       getNarratorComment('ratings', month),
     ));
   }
 
   // 8. Highest rated this month
-  const allRated = Object.values(d.ratingByEntry);
   if (allRated.length > 0) {
     const highest = allRated.reduce((best, cur) => cur.rating > best.rating ? cur : best);
     if (highest.rating > 0) {
       slides.push(slide(
         'highest-rated',
-        { title: highest.title, country: highest.country, type: highest.type, rating: highest.rating },
+        { title: highest.title, country: highest.country, type: highest.type, rating: highest.rating, poster: highest.poster },
         getNarratorComment('highestRated', month),
       ));
     }
@@ -214,7 +220,14 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
     const [topCountry, topCount] = countries[0];
     slides.push(slide(
       'country',
-      { country: topCountry, count: topCount, allCountries: countries.slice(0, 5) },
+      {
+        country: topCountry,
+        count: topCount,
+        allCountries: countries.slice(0, 5),
+        entries: [...d.completedTitles, ...d.statusCompletions]
+          .filter(entry => entry.country === topCountry)
+          .slice(0, 4),
+      },
       getNarratorComment('country', month),
     ));
   }

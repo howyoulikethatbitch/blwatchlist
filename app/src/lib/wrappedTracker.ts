@@ -20,6 +20,7 @@ function entryToTracked(e: Entry, rating?: number) {
     title: e.title,
     country: e.country,
     type: e.type,
+    poster: e.poster,
     ...(rating !== undefined ? { rating } : {}),
   };
 }
@@ -329,7 +330,7 @@ function processAction(
 
       const newRatingByEntry = {
         ...activity.ratingByEntry,
-        [fav.entryId]: { title: entry.title, rating: newRating, country: entry.country, type: entry.type },
+        [fav.entryId]: { ...entryToTracked(entry), rating: newRating },
       };
 
       return {

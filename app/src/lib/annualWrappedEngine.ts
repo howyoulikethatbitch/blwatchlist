@@ -297,7 +297,7 @@ export function buildAnnualSlides(snapshot: AnnualWrappedSnapshot): AnnualWrappe
   if (highest && highest.rating > 0) {
     slides.push(slide(
       'highest-rated',
-      { title: highest.title, country: highest.country, type: highest.type, rating: highest.rating, poster: highest.poster },
+      { title: highest.title, country: highest.country, type: highest.type, rating: highest.rating, entryId: highest.id },
       'This one clearly left a mark.',
     ));
   }

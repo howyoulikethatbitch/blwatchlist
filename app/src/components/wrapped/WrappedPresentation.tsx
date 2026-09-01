@@ -141,10 +141,10 @@ function StatSlide({ slide, accent }: { slide: WrappedSlide; accent: string }) {
 }
 
 function HighlightSlide({ slide, accent }: { slide: WrappedSlide; accent: string }) {
-  const p = slide.payload as { title: string; country: string; type: string; rating: number; poster?: string | null };
+  const p = slide.payload as { title: string; country: string; type: string; rating: number; entryId?: string };
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-4">
-      <WrappedPosterStack entries={[{ id: p.title, title: p.title, country: p.country, type: p.type as 'Movie' | 'Series', poster: p.poster }]} accent={accent} maxEntries={1} />
+      <WrappedPosterStack entries={[{ id: p.entryId ?? p.title, title: p.title, country: p.country, type: p.type as 'Movie' | 'Series' }]} accent={accent} maxEntries={1} />
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}

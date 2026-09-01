@@ -10,13 +10,7 @@ export interface TrackedEntry {
   title: string;
   country: string;
   type: 'Movie' | 'Series';
-  /** Optional for backwards compatibility with snapshots created before posters were tracked. */
-  poster?: string | null;
   rating?: number;
-}
-
-export interface RatedTrackedEntry extends TrackedEntry {
-  rating: number;
 }
 
 export interface MonthlyActivityData {
@@ -44,7 +38,7 @@ export interface MonthlyActivityData {
   ratingValues:  number[];           // for computing avg / highest / lowest
 
   // Per-entry latest rating this month (to find highest/lowest)
-  ratingByEntry: Record<string, RatedTrackedEntry>;
+  ratingByEntry: Record<string, { title: string; rating: number; country: string; type: string }>;
 
   // Top 10
   top10Updates: number;
@@ -148,7 +142,7 @@ export type SlidePayload =
 
 export interface IntroPayload   { month: string; year: number; monthName: string }
 export interface StatPayload    { count: number; label: string; titles?: string[]; entries?: TrackedEntry[] }
-export interface HighlightPayload { title: string; country: string; type: string; rating: number; poster?: string | null }
+export interface HighlightPayload { title: string; country: string; type: string; rating: number; entryId?: string }
 export interface CountryPayload {
   country: string;
   count: number;
@@ -283,7 +277,7 @@ export interface AnnualWrappedSlide {
 export type AnnualSlidePayload =
   | { year: number; totalActivity: number }
   | { count: number; label: string; titles?: string[]; entries?: AnnualTrackedEntry[] }
-  | { title: string; country: string; type: string; rating: number; poster?: string | null }
+  | { title: string; country: string; type: string; rating: number; entryId?: string }
   | { name: string; count: number; all: [string, number][]; entries?: AnnualTrackedEntry[] }
   | { countryCount: number; topCountry?: string; topCountryCount?: number }
   | { genreCount: number; topGenre?: string; topGenreCount?: number }

@@ -81,7 +81,11 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
   const month = snapshot.month;
   const monthName = monthKeyToMonthName(month);
   const year = snapshot.year;
-  const allRated = Object.values(d.ratingByEntry);
+  const allRated = Object.entries(d.ratingByEntry).map(([id, entry]) => ({
+    ...entry,
+    id,
+    type: entry.type as 'Movie' | 'Series',
+  }));
 
   // ── Quiet month ───────────────────────────────────────────────────────────
   const isQuiet =
@@ -198,7 +202,7 @@ export function buildSlides(snapshot: MonthlyWrappedSnapshot): WrappedSlide[] {
     if (highest.rating > 0) {
       slides.push(slide(
         'highest-rated',
-        { title: highest.title, country: highest.country, type: highest.type, rating: highest.rating, poster: highest.poster },
+        { title: highest.title, country: highest.country, type: highest.type, rating: highest.rating, entryId: highest.id },
         getNarratorComment('highestRated', month),
       ));
     }

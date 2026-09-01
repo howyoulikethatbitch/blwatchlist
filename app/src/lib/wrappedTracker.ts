@@ -20,7 +20,6 @@ function entryToTracked(e: Entry, rating?: number) {
     title: e.title,
     country: e.country,
     type: e.type,
-    poster: e.poster,
     ...(rating !== undefined ? { rating } : {}),
   };
 }

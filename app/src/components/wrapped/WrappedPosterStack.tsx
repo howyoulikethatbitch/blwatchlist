@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useApp } from '@/context/AppContext';
 import type { TrackedEntry } from '@/types/wrapped';
 
 interface WrappedPosterStackProps {
@@ -8,8 +9,12 @@ interface WrappedPosterStackProps {
   maxEntries?: number;
 }
 
+interface PosterEntry extends TrackedEntry {
+  poster: string | null;
+}
+
 function PosterCard({ entry, accent, index, total }: {
-  entry: TrackedEntry;
+  entry: PosterEntry;
   accent: string;
   index: number;
   total: number;
@@ -55,7 +60,11 @@ function PosterCard({ entry, accent, index, total }: {
 }
 
 export function WrappedPosterStack({ entries, accent, maxEntries = 4 }: WrappedPosterStackProps) {
-  const visibleEntries = entries.slice(0, maxEntries);
+  const { state } = useApp();
+  const visibleEntries = entries.slice(0, maxEntries).map(entry => ({
+    ...entry,
+    poster: state.entries.find(sourceEntry => sourceEntry.id === entry.id)?.poster ?? null,
+  }));
   if (visibleEntries.length === 0) return null;
 
   return (

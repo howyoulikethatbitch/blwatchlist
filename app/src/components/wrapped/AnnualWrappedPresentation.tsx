@@ -119,10 +119,10 @@ function Stat({ slide, accent }: { slide: AnnualWrappedSlide; accent: string }) 
 }
 
 function Highlight({ slide, accent }: { slide: AnnualWrappedSlide; accent: string }) {
-  const payload = slide.payload as { title: string; country: string; type: string; rating: number; poster?: string | null };
+  const payload = slide.payload as { title: string; country: string; type: string; rating: number; entryId?: string };
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
-      <WrappedPosterStack entries={[{ id: payload.title, title: payload.title, country: payload.country, type: payload.type as 'Movie' | 'Series', poster: payload.poster }]} accent={accent} maxEntries={1} />
+      <WrappedPosterStack entries={[{ id: payload.entryId ?? payload.title, title: payload.title, country: payload.country, type: payload.type as 'Movie' | 'Series' }]} accent={accent} maxEntries={1} />
       <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/50">Your highest-rated BL</p>
       <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-8xl font-black" style={{ color: accent }}>
         {formatRating(payload.rating)}
@@ -168,7 +168,7 @@ function Distribution({ slide, accent, kind }: { slide: AnnualWrappedSlide; acce
 }
 
 function TopTen({ slide, accent }: { slide: AnnualWrappedSlide; accent: string }) {
-  const payload = slide.payload as { entries: Array<{ id: string; title: string; rank: number; country: string; type: 'Movie' | 'Series'; poster?: string | null }>; drawerYear: number };
+  const payload = slide.payload as { entries: Array<{ id: string; title: string; rank: number; country: string; type: 'Movie' | 'Series' }>; drawerYear: number };
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <Crown className="h-12 w-12" style={{ color: accent }} />

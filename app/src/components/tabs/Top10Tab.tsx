@@ -1,5 +1,22 @@
 import { useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Star, ChevronDown, ChevronRight, Trash2, Plus, X, AlertTriangle, Edit3, Lock } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import Poster from "../Poster";
@@ -105,6 +122,40 @@ const Top10Card = memo(function Top10Card({
   );
 });
 
+const SortableTop10Card = memo(function SortableTop10Card({
+  entry,
+  rank,
+  onRemove,
+}: {
+  entry: { id: string; title: string; poster: string | null; type: string; country: string };
+  rank: number;
+  onRemove: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: entry.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 20 : undefined,
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <Top10Card entry={entry} rank={rank} isEditMode onRemove={onRemove} />
+    </div>
+  );
+});
+
 const EmptySlot = memo(function EmptySlot({ rank }: { rank: number }) {
   return (
     <div className="aspect-[2/3] w-full rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center bg-[#0f0f0f]">
@@ -200,6 +251,10 @@ function RankingModal({
 
 export default function Top10Tab() {
   const { state, dispatch, getEntryById, checkMilestones } = useApp();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const [openDrawers, setOpenDrawers] = useState<Set<number>>(new Set([new Date().getFullYear()]));
   const [addYearOpen, setAddYearOpen] = useState(false);
   const [newYear, setNewYear] = useState("");
@@ -270,6 +325,31 @@ export default function Top10Tab() {
     dispatch({
       type: "REORDER_TOP10",
       payload: { year, entries: items.map((e, i) => ({ ...e, rank: i + 1 })) },
+    });
+  };
+
+  /** Move an entry only after a drag is completed inside its edit-mode drawer. */
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const drawer = state.top10Drawers.find((item) =>
+      item.entries.some((entry) => entry.entryId === activeId),
+    );
+    const overDrawer = state.top10Drawers.find((item) =>
+      item.entries.some((entry) => entry.entryId === overId),
+    );
+    if (!drawer || drawer.year !== overDrawer?.year) return;
+
+    const sourceIndex = drawer.entries.findIndex((entry) => entry.entryId === activeId);
+    const destinationIndex = drawer.entries.findIndex((entry) => entry.entryId === overId);
+    if (sourceIndex === -1 || destinationIndex === -1) return;
+
+    const items = arrayMove(drawer.entries, sourceIndex, destinationIndex);
+    dispatch({
+      type: "REORDER_TOP10",
+      payload: { year: drawer.year, entries: items.map((entry, index) => ({ ...entry, rank: index + 1 })) },
     });
   };
 
@@ -375,8 +455,13 @@ export default function Top10Tab() {
       </div>
 
       {/* Year Drawers */}
-      <div className="space-y-3">
-        {state.top10Drawers.map((drawer) => {
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="space-y-3">
+          {state.top10Drawers.map((drawer) => {
           const isOpen = openDrawers.has(drawer.year);
           const isEditMode = editModeDrawers.has(drawer.year);
           const isCurrentYear = drawer.year === new Date().getFullYear();
@@ -461,35 +546,56 @@ export default function Top10Tab() {
                   >
                     <div className="bg-[#0A0A0A] p-3">
                       {/* Grid of Entries */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                        {drawer.entries.map((entry) => {
-                          const e = getEntryById(entry.entryId);
-                          if (!e) return null;
-                          return (
-                            <div
-                              key={entry.entryId}
-                              onClick={!isEditMode ? () => setSelectedEntry(e) : undefined}
-                            >
-                              <Top10Card
-                                entry={e}
-                                rank={entry.rank}
-                                isEditMode={isEditMode}
-                                onRemove={() =>
-                                  dispatch({
-                                    type: "REMOVE_FROM_TOP10",
-                                    payload: { year: drawer.year, entryId: entry.entryId },
-                                  })
-                                }
-                                onClick={!isEditMode ? () => setSelectedEntry(e) : undefined}
-                              />
-                            </div>
-                          );
-                        })}
-                        {/* Empty Slots */}
-                        {Array.from({ length: emptySlots }).map((_, i) => (
-                          <EmptySlot key={`empty-${i}`} rank={drawer.entries.length + i + 1} />
-                        ))}
-                      </div>
+                      {isEditMode ? (
+                        <SortableContext
+                          items={drawer.entries.map((entry) => entry.entryId)}
+                          strategy={rectSortingStrategy}
+                        >
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {drawer.entries.map((entry) => {
+                              const e = getEntryById(entry.entryId);
+                              if (!e) return null;
+                              return (
+                                <SortableTop10Card
+                                  key={entry.entryId}
+                                  entry={e}
+                                  rank={entry.rank}
+                                  onRemove={() =>
+                                    dispatch({
+                                      type: "REMOVE_FROM_TOP10",
+                                      payload: { year: drawer.year, entryId: entry.entryId },
+                                    })
+                                  }
+                                />
+                              );
+                            })}
+                            {Array.from({ length: emptySlots }).map((_, i) => (
+                              <EmptySlot key={`empty-${i}`} rank={drawer.entries.length + i + 1} />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                          {drawer.entries.map((entry) => {
+                            const e = getEntryById(entry.entryId);
+                            if (!e) return null;
+                            return (
+                              <div key={entry.entryId} onClick={() => setSelectedEntry(e)}>
+                                <Top10Card
+                                  entry={e}
+                                  rank={entry.rank}
+                                  isEditMode={false}
+                                  onRemove={() => undefined}
+                                  onClick={() => setSelectedEntry(e)}
+                                />
+                              </div>
+                            );
+                          })}
+                          {Array.from({ length: emptySlots }).map((_, i) => (
+                            <EmptySlot key={`empty-${i}`} rank={drawer.entries.length + i + 1} />
+                          ))}
+                        </div>
+                      )}
 
                       {/* Move Items Button (Edit Mode Only) */}
                       {isEditMode && (
@@ -517,9 +623,10 @@ export default function Top10Tab() {
                 )}
               </AnimatePresence>
             </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </DndContext>
 
       {/* Ranking Modal */}
       {rankingModalYear && (

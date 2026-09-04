@@ -47,19 +47,12 @@ const OngoingCard = memo(function OngoingCard({
             : ""
       }`}
     >
-      <div className="absolute top-2 right-2 z-10 flex max-w-[calc(100%-1rem)] items-start gap-2">
+      <div className="absolute top-2 right-2 z-10">
         <OngoingCountdown
           key={`${ongoingData.airDays.join(",")}|${ongoingData.airTime || ""}`}
           airDays={ongoingData.airDays}
           airTime={ongoingData.airTime}
         />
-        {showBadge && (
-          <span className={`mt-0.5 shrink-0 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ${
-            schedule.isFinalEpisodeScheduledToday ? "bg-amber-500" : "bg-[#E50914]"
-          }`}>
-            {schedule.isFinalEpisodeScheduledToday ? "Final EP" : "Airing Today"}
-          </span>
-        )}
       </div>
 
       <div className="flex items-start gap-3">
@@ -67,7 +60,16 @@ const OngoingCard = memo(function OngoingCard({
           <Poster src={entry.poster} title={entry.title} size="md" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-base font-bold truncate pr-16">{entry.title}</p>
+          <div className="flex items-center gap-2 min-w-0 pr-2 sm:pr-[165px]">
+            <p className="text-base font-bold truncate">{entry.title}</p>
+            {showBadge && (
+              <span className={`shrink-0 whitespace-nowrap text-white text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                schedule.isFinalEpisodeScheduledToday ? "bg-amber-500" : "bg-[#E50914]"
+              }`}>
+                {schedule.isFinalEpisodeScheduledToday ? "Final EP" : "Airing Today"}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-[#B3B3B3]">{entry.country}</p>
 
           {/* Episode Tracker */}

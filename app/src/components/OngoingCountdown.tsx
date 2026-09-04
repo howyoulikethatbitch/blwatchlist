@@ -93,27 +93,27 @@ function CountdownDisplay({
       className={`flex items-center justify-center rounded-xl border border-white/10 bg-[#171717]/95 ${
         large
           ? "w-full max-w-[410px] px-4 py-5 sm:px-7 sm:py-6"
-          : "w-[min(54vw,220px)] min-w-[178px] px-2 py-1.5"
+          : "w-[min(48vw,190px)] min-w-[156px] px-1.5 py-1"
       }`}
     >
       {units.map((unit, index) => (
         <div key={unit.label} className="flex items-center">
-          <div className={`flex min-w-0 flex-col items-center ${large ? "px-2 sm:px-3" : "px-1"}`}>
+          <div className={`flex min-w-0 flex-col items-center ${large ? "px-2 sm:px-3" : "px-0.5"}`}>
             <span
               className={`font-extrabold leading-none tabular-nums text-white ${
-                large ? "text-4xl sm:text-5xl" : "text-base sm:text-lg"
+                large ? "text-4xl sm:text-5xl" : "text-sm sm:text-base"
               }`}
             >
               {unit.value}
             </span>
-            <span className={`mt-1 text-[#888] ${large ? "text-sm" : "text-[8px] sm:text-[9px]"}`}>
+            <span className={`mt-1 text-[#888] ${large ? "text-sm" : "text-[7px] sm:text-[8px]"}`}>
               {unit.label}
             </span>
           </div>
           {index < units.length - 1 && (
             <span
               aria-hidden="true"
-              className={`font-bold leading-none text-[#555] ${large ? "text-3xl sm:text-4xl" : "text-sm"}`}
+              className={`font-bold leading-none text-[#555] ${large ? "text-3xl sm:text-4xl" : "text-xs"}`}
             >
               :
             </span>

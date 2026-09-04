@@ -8,6 +8,7 @@ import AirDaySelector from "../AirDaySelector";
 import { getOngoingSchedule } from "@/lib/episodeSchedule";
 import EntryModal from "../EntryModal";
 import CalendarSheet from "../CalendarSheet";
+import OngoingCountdown from "../OngoingCountdown";
 
 const OngoingCard = memo(function OngoingCard({
   entryId,
@@ -46,13 +47,20 @@ const OngoingCard = memo(function OngoingCard({
             : ""
       }`}
     >
-      {showBadge && (
-        <span className={`absolute top-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 ${
-          schedule.isFinalEpisodeScheduledToday ? "bg-amber-500" : "bg-[#E50914]"
-        }`}>
-          {schedule.isFinalEpisodeScheduledToday ? "Final EP" : "Airing Today"}
-        </span>
-      )}
+      <div className="absolute top-2 right-2 z-10 flex max-w-[calc(100%-1rem)] items-start gap-2">
+        <OngoingCountdown
+          key={`${ongoingData.airDays.join(",")}|${ongoingData.airTime || ""}`}
+          airDays={ongoingData.airDays}
+          airTime={ongoingData.airTime}
+        />
+        {showBadge && (
+          <span className={`mt-0.5 shrink-0 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ${
+            schedule.isFinalEpisodeScheduledToday ? "bg-amber-500" : "bg-[#E50914]"
+          }`}>
+            {schedule.isFinalEpisodeScheduledToday ? "Final EP" : "Airing Today"}
+          </span>
+        )}
+      </div>
 
       <div className="flex items-start gap-3">
         <div onClick={() => onEntryClick(entry as Entry)} className="cursor-pointer flex-shrink-0">

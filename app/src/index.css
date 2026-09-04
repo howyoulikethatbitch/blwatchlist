@@ -119,6 +119,21 @@
   100% { background-position: -200% 0; }
 }
 
+@keyframes countdown-confetti {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, -12px, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--confetti-x), 180px, 0) rotate(540deg);
+  }
+}
+
+.countdown-confetti {
+  animation: countdown-confetti 1.8s ease-out infinite;
+}
+
 /* Performance: promote animated elements to their own layer */
 .will-change-transform {
   will-change: transform;

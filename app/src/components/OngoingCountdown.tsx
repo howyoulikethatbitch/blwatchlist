@@ -1,0 +1,209 @@
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { motion } from "framer-motion";
+import { PartyPopper } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type { AirDay } from "@/types";
+
+interface CountdownParts {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+const DAY_INDEX: Record<AirDay, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+const ZERO_COUNTDOWN: CountdownParts = {
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0,
+};
+
+const CONFETTI_COLORS = ["#E50914", "#F59E0B", "#22C55E", "#38BDF8", "#F472B6"];
+
+function parseAirTime(airTime = "00:00"): { hours: number; minutes: number } | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(airTime);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return { hours, minutes };
+}
+
+function getNextAiringAt(now: Date, airDays: AirDay[], airTime?: string): Date | null {
+  const parsedTime = parseAirTime(airTime);
+  if (!parsedTime || airDays.length === 0) return null;
+
+  const airingDayIndexes = new Set(airDays.map((day) => DAY_INDEX[day]));
+  for (let offset = 0; offset <= 7; offset += 1) {
+    const candidate = new Date(now);
+    candidate.setDate(now.getDate() + offset);
+    candidate.setHours(parsedTime.hours, parsedTime.minutes, 0, 0);
+
+    if (airingDayIndexes.has(candidate.getDay()) && candidate.getTime() >= now.getTime()) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function getCountdownParts(milliseconds: number): CountdownParts {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  return {
+    days: Math.floor(totalSeconds / 86_400),
+    hours: Math.floor((totalSeconds % 86_400) / 3_600),
+    minutes: Math.floor((totalSeconds % 3_600) / 60),
+    seconds: totalSeconds % 60,
+  };
+}
+
+function CountdownDisplay({
+  parts,
+  large = false,
+}: {
+  parts: CountdownParts;
+  large?: boolean;
+}) {
+  const units = [
+    { value: parts.days, label: "days" },
+    { value: parts.hours, label: "hours" },
+    { value: parts.minutes, label: "minutes" },
+    { value: parts.seconds, label: "seconds" },
+  ];
+
+  return (
+    <div
+      className={`flex items-center justify-center rounded-xl border border-white/10 bg-[#171717]/95 ${
+        large
+          ? "w-full max-w-[410px] px-4 py-5 sm:px-7 sm:py-6"
+          : "w-[min(54vw,220px)] min-w-[178px] px-2 py-1.5"
+      }`}
+    >
+      {units.map((unit, index) => (
+        <div key={unit.label} className="flex items-center">
+          <div className={`flex min-w-0 flex-col items-center ${large ? "px-2 sm:px-3" : "px-1"}`}>
+            <span
+              className={`font-extrabold leading-none tabular-nums text-white ${
+                large ? "text-4xl sm:text-5xl" : "text-base sm:text-lg"
+              }`}
+            >
+              {unit.value}
+            </span>
+            <span className={`mt-1 text-[#888] ${large ? "text-sm" : "text-[8px] sm:text-[9px]"}`}>
+              {unit.label}
+            </span>
+          </div>
+          {index < units.length - 1 && (
+            <span
+              aria-hidden="true"
+              className={`font-bold leading-none text-[#555] ${large ? "text-3xl sm:text-4xl" : "text-sm"}`}
+            >
+              :
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ConfettiBurst() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-4 top-0 h-52 overflow-hidden">
+      {Array.from({ length: 28 }, (_, index) => {
+        const style = {
+          left: `${(index * 37) % 100}%`,
+          backgroundColor: CONFETTI_COLORS[index % CONFETTI_COLORS.length],
+          animationDelay: `${(index % 7) * 0.12}s`,
+          "--confetti-x": `${((index % 5) - 2) * 34}px`,
+        } as CSSProperties;
+
+        return <span key={index} className="countdown-confetti absolute top-0 h-3 w-1.5 rounded-sm" style={style} />;
+      })}
+    </div>
+  );
+}
+
+export default function OngoingCountdown({
+  airDays,
+  airTime,
+}: {
+  airDays: AirDay[];
+  airTime?: string;
+}) {
+  const [now, setNow] = useState(() => new Date());
+  const [target, setTarget] = useState<Date | null>(() => getNextAiringAt(new Date(), airDays, airTime));
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const isZero = Boolean(target && now.getTime() >= target.getTime());
+
+  const parts = useMemo(() => {
+    if (isZero || !target) return ZERO_COUNTDOWN;
+    return getCountdownParts(target.getTime() - now.getTime());
+  }, [isZero, now, target]);
+
+  const handleCelebrationChange = (open: boolean) => {
+    setIsCelebrationOpen(open);
+    if (!open) {
+      const resetNow = new Date();
+      setNow(resetNow);
+      setTarget(getNextAiringAt(resetNow, airDays, airTime));
+    }
+  };
+
+  if (!target && !isZero) return null;
+
+  return (
+    <>
+      <motion.button
+        type="button"
+        aria-label={isZero ? "Open airing celebration" : "View next airing countdown"}
+        onClick={() => isZero && setIsCelebrationOpen(true)}
+        className={`rounded-xl text-left ${isZero ? "cursor-pointer tap-active" : "cursor-default"}`}
+        whileTap={isZero ? { scale: 0.98 } : undefined}
+      >
+        <CountdownDisplay parts={parts} />
+      </motion.button>
+
+      <Dialog open={isCelebrationOpen} onOpenChange={handleCelebrationChange}>
+        <DialogContent className="overflow-hidden border-white/10 bg-[#141414] text-white sm:max-w-md">
+          <div className="relative flex flex-col items-center gap-4 py-3">
+            <ConfettiBurst />
+            <DialogHeader className="relative z-10 items-center text-center">
+              <PartyPopper className="h-10 w-10 text-[#E50914]" />
+              <DialogTitle className="text-2xl font-extrabold">It&apos;s time to watch!</DialogTitle>
+              <DialogDescription className="text-[#B3B3B3]">
+                The episode is airing now. Happy watching!
+              </DialogDescription>
+            </DialogHeader>
+            <div className="relative z-10 w-full">
+              <CountdownDisplay parts={ZERO_COUNTDOWN} large />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

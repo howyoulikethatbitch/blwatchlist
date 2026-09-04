@@ -73,7 +73,9 @@ function getCalendarSchedule(
   ).length;
   const releasedBeforeToday = releaseDates.filter((value) => value < todayKey).length;
   const isScheduledToday = releaseDates.includes(todayKey);
-  const isAiringToday = isScheduledToday && airingTimeReached;
+  // Visibility follows the configured release date. The assigned time only
+  // determines whether today's episode counts as aired.
+  const isAiringToday = isScheduledToday;
   const totalEpisodes = releaseDates.length;
 
   return {
@@ -149,10 +151,12 @@ export function getOngoingSchedule(
   const isPremiereDay = firstAirDate
     ? today.getTime() === firstAirDate.getTime()
     : false;
-  const isAiringToday =
+  const isScheduledToday =
     (isPremiereDay || airDays.has(AIR_DAYS_BY_INDEX[today.getDay()])) &&
-    (!firstAirDate || today >= firstAirDate) &&
-    hasReachedAirTime(now, ongoing.airTime);
+    (!firstAirDate || today >= firstAirDate);
+  // Visibility follows the configured airing day. The assigned time is used
+  // below only when calculating the latest episode that has aired.
+  const isAiringToday = isScheduledToday;
 
   if (!firstAirDate || airDays.size === 0 || ongoing.totalEpisodes <= 0) {
     return {
@@ -167,7 +171,6 @@ export function getOngoingSchedule(
   }
 
   const scheduleThroughDate = new Date(today);
-  const isScheduledToday = isPremiereDay || airDays.has(AIR_DAYS_BY_INDEX[today.getDay()]);
   const dayBeforeToday = new Date(today);
   dayBeforeToday.setDate(dayBeforeToday.getDate() - 1);
   if (isScheduledToday && !hasReachedAirTime(now, ongoing.airTime)) {

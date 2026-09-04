@@ -30,6 +30,10 @@ const OngoingCard = memo(function OngoingCard({
   const isAiringToday = schedule.isAiringToday;
   const showBadge = isAiringToday || schedule.isFinalEpisodeScheduledToday;
   const progressTotal = schedule.totalEpisodes || ongoingData.totalEpisodes;
+  const showCountdown =
+    schedule.isConfigured &&
+    schedule.airedEpisode !== null &&
+    schedule.airedEpisode < schedule.totalEpisodes;
   const progress = progressTotal > 0 ? (ongoingData.currentEpisode / progressTotal) * 100 : 0;
   const [isAskingFinished, setIsAskingFinished] = useState(false);
   const [verificationError, setVerificationError] = useState(false);
@@ -47,20 +51,22 @@ const OngoingCard = memo(function OngoingCard({
             : ""
       }`}
     >
-      <div className="absolute top-2 right-2 z-10">
-        <OngoingCountdown
-          key={`${ongoingData.airDays.join(",")}|${ongoingData.airTime || ""}`}
-          airDays={ongoingData.airDays}
-          airTime={ongoingData.airTime}
-        />
-      </div>
+      {showCountdown && (
+        <div className="absolute top-2 right-2 z-10">
+          <OngoingCountdown
+            key={`${ongoingData.airDays.join(",")}|${ongoingData.airTime || ""}`}
+            airDays={ongoingData.airDays}
+            airTime={ongoingData.airTime}
+          />
+        </div>
+      )}
 
       <div className="flex items-start gap-3">
         <div onClick={() => onEntryClick(entry as Entry)} className="cursor-pointer flex-shrink-0">
           <Poster src={entry.poster} title={entry.title} size="md" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 min-w-0 pr-2 sm:pr-[165px]">
+          <div className={`flex items-center gap-2 min-w-0 ${showCountdown ? "pr-2 sm:pr-[165px]" : "pr-2"}`}>
             <p className="text-base font-bold truncate">{entry.title}</p>
             {showBadge && (
               <span className={`shrink-0 whitespace-nowrap text-white text-[10px] font-bold px-2 py-0.5 rounded-full ${

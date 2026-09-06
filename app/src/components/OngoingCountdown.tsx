@@ -35,6 +35,7 @@ const ZERO_COUNTDOWN: CountdownParts = {
 };
 
 const CONFETTI_COLORS = ["#E50914", "#F59E0B", "#22C55E", "#38BDF8", "#F472B6"];
+const COUNTDOWN_STORAGE_PREFIX = "bl-watchlist:pending-airing:";
 
 function parseAirTime(airTime = "00:00"): { hours: number; minutes: number } | null {
   const match = /^(\d{2}):(\d{2})$/.exec(airTime);
@@ -62,6 +63,64 @@ function getNextAiringAt(now: Date, airDays: AirDay[], airTime?: string): Date |
   }
 
   return null;
+}
+
+function getScheduleKey(airDays: AirDay[], airTime?: string): string {
+  return `${airDays.join(",")}|${airTime || ""}`;
+}
+
+function readStoredTarget(entryId: string, scheduleKey: string): Date | null {
+  try {
+    const raw = window.localStorage.getItem(`${COUNTDOWN_STORAGE_PREFIX}${entryId}`);
+    if (!raw) return null;
+
+    const stored = JSON.parse(raw) as { scheduleKey?: string; target?: number };
+    if (
+      stored.scheduleKey !== scheduleKey ||
+      typeof stored.target !== "number" ||
+      !Number.isFinite(stored.target)
+    ) {
+      window.localStorage.removeItem(`${COUNTDOWN_STORAGE_PREFIX}${entryId}`);
+      return null;
+    }
+
+    const target = new Date(stored.target);
+    return Number.isNaN(target.getTime()) ? null : target;
+  } catch {
+    return null;
+  }
+}
+
+function storeTarget(entryId: string, scheduleKey: string, target: Date | null): void {
+  try {
+    const storageKey = `${COUNTDOWN_STORAGE_PREFIX}${entryId}`;
+    if (!target) {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ scheduleKey, target: target.getTime() }),
+    );
+  } catch {
+    // Countdown behavior should still work when browser storage is unavailable.
+  }
+}
+
+function getInitialTarget(
+  entryId: string,
+  now: Date,
+  airDays: AirDay[],
+  airTime?: string,
+): Date | null {
+  const scheduleKey = getScheduleKey(airDays, airTime);
+  const storedTarget = readStoredTarget(entryId, scheduleKey);
+  if (storedTarget) return storedTarget;
+
+  const nextTarget = getNextAiringAt(now, airDays, airTime);
+  storeTarget(entryId, scheduleKey, nextTarget);
+  return nextTarget;
 }
 
 function getCountdownParts(milliseconds: number): CountdownParts {
@@ -142,14 +201,19 @@ function ConfettiBurst() {
 }
 
 export default function OngoingCountdown({
+  entryId,
   airDays,
   airTime,
 }: {
+  entryId: string;
   airDays: AirDay[];
   airTime?: string;
 }) {
   const [now, setNow] = useState(() => new Date());
-  const [target, setTarget] = useState<Date | null>(() => getNextAiringAt(new Date(), airDays, airTime));
+  const scheduleKey = getScheduleKey(airDays, airTime);
+  const [target, setTarget] = useState<Date | null>(() =>
+    getInitialTarget(entryId, new Date(), airDays, airTime),
+  );
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
 
   useEffect(() => {
@@ -164,13 +228,15 @@ export default function OngoingCountdown({
     return getCountdownParts(target.getTime() - now.getTime());
   }, [isZero, now, target]);
 
-  const handleCelebrationChange = (open: boolean) => {
-    setIsCelebrationOpen(open);
-    if (!open) {
-      const resetNow = new Date();
-      setNow(resetNow);
-      setTarget(getNextAiringAt(resetNow, airDays, airTime));
-    }
+  const handleCelebrationClick = () => {
+    if (!isZero) return;
+
+    const resetNow = new Date();
+    const nextTarget = getNextAiringAt(resetNow, airDays, airTime);
+    setIsCelebrationOpen(true);
+    setNow(resetNow);
+    setTarget(nextTarget);
+    storeTarget(entryId, scheduleKey, nextTarget);
   };
 
   if (!target && !isZero) return null;
@@ -180,14 +246,14 @@ export default function OngoingCountdown({
       <motion.button
         type="button"
         aria-label={isZero ? "Open airing celebration" : "View next airing countdown"}
-        onClick={() => isZero && setIsCelebrationOpen(true)}
+        onClick={handleCelebrationClick}
         className={`rounded-xl text-left ${isZero ? "cursor-pointer tap-active" : "cursor-default"}`}
         whileTap={isZero ? { scale: 0.98 } : undefined}
       >
         <CountdownDisplay parts={parts} />
       </motion.button>
 
-      <Dialog open={isCelebrationOpen} onOpenChange={handleCelebrationChange}>
+      <Dialog open={isCelebrationOpen} onOpenChange={setIsCelebrationOpen}>
         <DialogContent className="overflow-hidden border-white/10 bg-[#141414] text-white sm:max-w-md">
           <div className="relative flex flex-col items-center gap-4 py-3">
             <ConfettiBurst />

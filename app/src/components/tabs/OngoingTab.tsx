@@ -55,6 +55,7 @@ const OngoingCard = memo(function OngoingCard({
         <div className="absolute top-2 right-2 z-10">
           <OngoingCountdown
             key={`${ongoingData.airDays.join(",")}|${ongoingData.airTime || ""}`}
+            entryId={entryId}
             airDays={ongoingData.airDays}
             airTime={ongoingData.airTime}
           />
